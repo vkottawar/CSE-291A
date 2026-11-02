@@ -1,0 +1,152 @@
+{
+  "model": "api-glm-5.3-flash",
+  "layout": "planner-first",
+  "seed": 0,
+  "repeats": 3,
+  "tasks": [
+    {
+      "task": 0,
+      "passed": 3,
+      "runs": 3,
+      "errors": 0,
+      "mean_tokens": 6513,
+      "mean_seconds": 4.2,
+      "distinct_action_sets": 1,
+      "mean_facts": 4.7,
+      "claimed_without_action": 0,
+      "duplicate_facts": 0
+    },
+    {
+      "task": 2,
+      "passed": 3,
+      "runs": 3,
+      "errors": 0,
+      "mean_tokens": 9947,
+      "mean_seconds": 10.2,
+      "distinct_action_sets": 2,
+      "mean_facts": 11,
+      "claimed_without_action": 0,
+      "duplicate_facts": 0
+    },
+    {
+      "task": 3,
+      "passed": 3,
+      "runs": 3,
+      "errors": 0,
+      "mean_tokens": 6532,
+      "mean_seconds": 4.6,
+      "distinct_action_sets": 1,
+      "mean_facts": 7,
+      "claimed_without_action": 0,
+      "duplicate_facts": 0
+    },
+    {
+      "task": 4,
+      "passed": 3,
+      "runs": 3,
+      "errors": 0,
+      "mean_tokens": 5655,
+      "mean_seconds": 3.5,
+      "distinct_action_sets": 1,
+      "mean_facts": 5,
+      "claimed_without_action": 0,
+      "duplicate_facts": 0
+    },
+    {
+      "task": 5,
+      "passed": 3,
+      "runs": 3,
+      "errors": 0,
+      "mean_tokens": 6360,
+      "mean_seconds": 4.0,
+      "distinct_action_sets": 1,
+      "mean_facts": 7.3,
+      "claimed_without_action": 0,
+      "duplicate_facts": 0
+    },
+    {
+      "task": 6,
+      "passed": 3,
+      "runs": 3,
+      "errors": 0,
+      "mean_tokens": 5484,
+      "mean_seconds": 3.6,
+      "distinct_action_sets": 1,
+      "mean_facts": 5,
+      "claimed_without_action": 0,
+      "duplicate_facts": 0
+    },
+    {
+      "task": 9,
+      "passed": 3,
+      "runs": 3,
+      "errors": 0,
+      "mean_tokens": 6645,
+      "mean_seconds": 3.8,
+      "distinct_action_sets": 2,
+      "mean_facts": 4.3,
+      "claimed_without_action": 0,
+      "duplicate_facts": 0
+    },
+    {
+      "task": 11,
+      "passed": 3,
+      "runs": 3,
+      "errors": 0,
+      "mean_tokens": 6981,
+      "mean_seconds": 26.0,
+      "distinct_action_sets": 1,
+      "mean_facts": 6.7,
+      "claimed_without_action": 0,
+      "duplicate_facts": 0
+    },
+    {
+      "task": 12,
+      "passed": 0,
+      "runs": 3,
+      "errors": 0,
+      "mean_tokens": 5071,
+      "mean_seconds": 4.1,
+      "distinct_action_sets": 1,
+      "mean_facts": 5,
+      "claimed_without_action": 0,
+      "duplicate_facts": 0
+    },
+    {
+      "task": 13,
+      "passed": 3,
+      "runs": 3,
+      "errors": 0,
+      "mean_tokens": 6644,
+      "mean_seconds": 3.7,
+      "distinct_action_sets": 1,
+      "mean_facts": 6,
+      "claimed_without_action": 0,
+      "duplicate_facts": 0
+    },
+    {
+      "task": 14,
+      "passed": 3,
+      "runs": 3,
+      "errors": 0,
+      "mean_tokens": 6832,
+      "mean_seconds": 3.9,
+      "distinct_action_sets": 1,
+      "mean_facts": 1,
+      "claimed_without_action": 0,
+      "duplicate_facts": 0
+    },
+    {
+      "task": 15,
+      "passed": 3,
+      "runs": 3,
+      "errors": 0,
+      "mean_tokens": 11644,
+      "mean_seconds": 27.1,
+      "distinct_action_sets": 2,
+      "mean_facts": 12,
+      "claimed_without_action": 0,
+      "duplicate_facts": 0
+    }
+  ]
+}

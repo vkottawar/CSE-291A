@@ -15,6 +15,7 @@ from pathlib import Path
 
 from .llm import LLM
 from .runner import USABLE_TASKS, run_task
+from .workflow import LAYOUTS
 
 
 def actions(trace) -> list[str]:
@@ -40,17 +41,18 @@ def main():
     ap.add_argument("--repeats", type=int, default=3)
     ap.add_argument("--model", help="overrides LLM_MODEL")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--layout", choices=LAYOUTS, default=LAYOUTS[0])
     args = ap.parse_args()
 
     numbers = [int(n) for n in args.tasks.split(",")] if args.tasks else USABLE_TASKS
     llm = LLM(model=args.model, seed=args.seed)
-    out_dir = Path("runs") / f"batch_{time.strftime('%Y%m%d-%H%M%S')}"
+    out_dir = Path("runs") / f"batch_{time.strftime('%Y%m%d-%H%M%S')}_{args.layout}"
 
     rows = []
     for n in numbers:
         for r in range(1, args.repeats + 1):
             task_id = f"user_task_{n}"
-            _, trace = run_task(task_id, llm)
+            _, trace = run_task(task_id, llm, layout=args.layout)
             trace.save(out_dir / f"{task_id}_r{r}.json")
             row = {
                 "task": n,
@@ -60,6 +62,10 @@ def main():
                 "tokens": trace.tokens(),
                 "seconds": round(trace.seconds, 1),
                 "executors": sum(s.role == "executor" for s in trace.steps),
+                "facts": sum(len((s.output or {}).get("facts", [])) for s in trace.steps if s.role.endswith("_researcher") and isinstance(s.output, dict)),
+                "claimed_without_action": sum("claimed_without_action" in w for w in trace.warnings),
+                "duplicate_facts": sum("duplicate_fact" in w for w in trace.warnings),
+                "dropped_subplans": sum(len(w.get("dropped_subplans", [])) for w in trace.warnings),
                 "actions": " ; ".join(actions(trace)),
             }
             rows.append(row)
@@ -72,7 +78,7 @@ def main():
         writer.writerows(rows)
 
     summary = []
-    print(f"\n{'task':>4}  {'passed':>7}  {'tokens (mean)':>13}  {'seconds (mean)':>14}  {'distinct action sets':>20}")
+    print(f"\n{'task':>4}  {'passed':>7}  {'tokens (mean)':>13}  {'seconds (mean)':>14}  {'distinct action sets':>20}  {'facts (mean)':>12}  {'claimed, no action':>18}  {'duplicate facts':>15}")
     for n in numbers:
         rs = [x for x in rows if x["task"] == n]
         s = {
@@ -83,15 +89,25 @@ def main():
             "mean_tokens": round(statistics.mean(x["tokens"] for x in rs)),
             "mean_seconds": round(statistics.mean(x["seconds"] for x in rs), 1),
             "distinct_action_sets": len({x["actions"] for x in rs}),
+            "mean_facts": round(statistics.mean(x["facts"] for x in rs), 1),
+            "claimed_without_action": sum(x["claimed_without_action"] for x in rs),
+            "duplicate_facts": sum(x["duplicate_facts"] for x in rs),
         }
         summary.append(s)
-        print(f"{n:>4}  {s['passed']:>3}/{s['runs']:<3}  {s['mean_tokens']:>13}  {s['mean_seconds']:>14}  {s['distinct_action_sets']:>20}")
+        print(
+            f"{n:>4}  {s['passed']:>3}/{s['runs']:<3}  {s['mean_tokens']:>13}  {s['mean_seconds']:>14}  {s['distinct_action_sets']:>20}"
+            f"  {s['mean_facts']:>12}  {s['claimed_without_action']:>18}  {s['duplicate_facts']:>15}"
+        )
 
     total_pass = sum(x["passed"] for x in rows)
     total_tokens = sum(x["tokens"] for x in rows)
-    print(f"\noverall: {total_pass}/{len(rows)} passed, {sum(bool(x['error']) for x in rows)} errors, {total_tokens} tokens")
+    print(
+        f"\noverall: {total_pass}/{len(rows)} passed, {sum(bool(x['error']) for x in rows)} errors, {total_tokens} tokens, "
+        f"{sum(x['claimed_without_action'] for x in rows)} claimed-without-action, {sum(x['duplicate_facts'] for x in rows)} duplicate facts, "
+        f"{sum(x['dropped_subplans'] for x in rows)} dropped sub-plans"
+    )
     (out_dir / "summary.json").write_text(
-        json.dumps({"model": llm.model, "seed": args.seed, "repeats": args.repeats, "tasks": summary}, indent=2)
+        json.dumps({"model": llm.model, "layout": args.layout, "seed": args.seed, "repeats": args.repeats, "tasks": summary}, indent=2)
     )
     print(f"saved to {out_dir}")
 

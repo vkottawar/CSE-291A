@@ -14,17 +14,17 @@ BENCHMARK_VERSION = "v1.2.2"
 USABLE_TASKS = [0, 2, 3, 4, 5, 6, 9, 11, 12, 13, 14, 15]
 
 
-def run_task(task_id: str, llm):
+def run_task(task_id: str, llm, layout: str = "researchers-first"):
     suite = get_suite(BENCHMARK_VERSION, "banking")
     task = suite.get_user_task_by_id(task_id)
     env = task.init_environment(suite.load_and_inject_default_environment({}))
     pre_env = env.model_copy(deep=True)
     runtime = FunctionsRuntime(suite.tools)
 
-    trace = Trace(task_id=task_id)
+    trace = Trace(task_id=task_id, layout=layout)
     start = time.time()
     try:
-        report = run_workflow(task.PROMPT, env, runtime, llm, trace)
+        report = run_workflow(task.PROMPT, env, runtime, llm, trace, layout=layout)
         trace.utility = task.utility(report or "", pre_env, env)
     except Exception as e:
         trace.error = f"{type(e).__name__}: {e}"
