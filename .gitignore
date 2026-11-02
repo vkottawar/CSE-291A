@@ -1,0 +1,7 @@
+.env
+.venv/
+.vscode/
+runs/
+__pycache__/
+CSE 291A Fall 2026 Course Projects.pdf
+project-draft.rtf
