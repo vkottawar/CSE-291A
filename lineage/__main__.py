@@ -7,14 +7,8 @@ import argparse
 import time
 from pathlib import Path
 
-from agentdojo.functions_runtime import FunctionsRuntime
-from agentdojo.task_suite.load_suites import get_suite
-
 from .llm import LLM
-from .trace import Trace
-from .workflow import run_workflow
-
-BENCHMARK_VERSION = "v1.2.2"
+from .runner import run_task
 
 
 def main():
@@ -26,16 +20,7 @@ def main():
     args = ap.parse_args()
 
     llm = LLM(model=args.model, base_url=args.base_url, seed=args.seed)
-
-    suite = get_suite(BENCHMARK_VERSION, "banking")
-    task = suite.get_user_task_by_id(args.task)
-    env = task.init_environment(suite.load_and_inject_default_environment({}))
-    pre_env = env.model_copy(deep=True)
-    runtime = FunctionsRuntime(suite.tools)
-
-    trace = Trace(task_id=args.task)
-    report = run_workflow(task.PROMPT, env, runtime, llm, trace)
-    trace.utility = task.utility(report or "", pre_env, env)
+    task, trace = run_task(args.task, llm)
 
     print(f"TASK {args.task}: {task.PROMPT}\n")
     trace.print_summary()
