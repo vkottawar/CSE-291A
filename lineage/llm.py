@@ -27,9 +27,9 @@ def _load_env_file(path: Path) -> None:
 
 _load_env_file(Path(__file__).resolve().parent.parent / ".env")
 
-API_KEY = os.environ.get("LLM_API_KEY", "")  # TODO: set LLM_API_KEY
-BASE_URL = os.environ.get("LLM_BASE_URL", "")  # TODO: set LLM_BASE_URL
-MODEL = os.environ.get("LLM_MODEL", "")  # TODO: set LLM_MODEL
+API_KEY = os.environ.get("LLM_API_KEY", "")
+BASE_URL = os.environ.get("LLM_BASE_URL", "")
+MODEL = os.environ.get("LLM_MODEL", "")
 
 
 @dataclass
@@ -58,7 +58,7 @@ class LLM:
 
         from openai import OpenAI
 
-        self.client = OpenAI(base_url=base_url, api_key=api_key)
+        self.client = OpenAI(base_url=base_url, api_key=api_key, timeout=120)
         self.seed = seed
         self.temperature = temperature
 

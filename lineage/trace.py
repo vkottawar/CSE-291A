@@ -38,7 +38,12 @@ class Trace:
     steps: list[StepRecord] = field(default_factory=list)
     warnings: list[dict] = field(default_factory=list)
     utility: bool | None = None
+    error: str | None = None  # set when the run crashed (API error, bad tool args, ...); kept, not dropped
+    seconds: float = 0.0
     started: float = field(default_factory=time.time)
+
+    def tokens(self) -> int:
+        return sum(s.prompt_tokens + s.completion_tokens for s in self.steps)
 
     def save(self, path: Path) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -52,6 +57,8 @@ class Trace:
             print(f"{'':4} output: {_short(s.output, 150)}")
         for w in self.warnings:
             print(f"WARNING {w}")
+        if self.error:
+            print(f"ERROR {self.error}")
         print(f"utility: {self.utility}")
 
 
