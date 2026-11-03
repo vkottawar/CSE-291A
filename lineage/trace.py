@@ -35,6 +35,7 @@ class StepRecord:
 @dataclass
 class Trace:
     task_id: str
+    layout: str = ""
     steps: list[StepRecord] = field(default_factory=list)
     warnings: list[dict] = field(default_factory=list)
     utility: bool | None = None

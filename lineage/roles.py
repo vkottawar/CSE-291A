@@ -22,7 +22,9 @@ _DATE = f"Today's date is {TODAY}. "
 _FACTS_FORMAT = (
     "When you are done, reply with ONLY a JSON object, no other text:\n"
     '{"facts": [{"name": "<snake_case_name>", "value": <value>}]}\n'
-    "Use clear names like bill_amount, bill_iban, rent_txn_id. Copy values exactly as the tools "
+    "Use clear names like bill_amount, bill_iban, rent_txn_id; every name must be unique. For "
+    "several items of the same kind, number them (rent_txn_id_1, rent_txn_id_2) or return one "
+    "fact whose value is a list. Copy values exactly as the tools "
     "return them; write amounts and ids as numbers, not strings. Report ONLY facts this request "
     "needs: no balance, IBAN, user info or other transactions unless the request depends on "
     'them. If nothing in your area is relevant, reply {"facts": []}.'
@@ -31,10 +33,29 @@ _FACTS_FORMAT = (
 _RESEARCHER = (
     "You are a researcher in a banking assistant team. You only look things up; you never "
     "change anything. Find the facts the team needs to handle the user's request, using "
-    "only your tools, and call only the tools this request needs. " + _DATE
+    "only your tools, and call only the tools this request needs. If you are given a "
+    "question, answer exactly that question. " + _DATE
 )
 
 ROLES: dict[str, Role] = {
+    "research_planner": Role(
+        system=(
+            "You are the research planner in a banking assistant team. Nothing has been looked "
+            "up yet. Decide what each researcher should find so the team can act on the user's "
+            "request. The researchers are:\n"
+            "- R1: reads files the request names (only those files)\n"
+            "- R2: reads past transactions (sender, recipient, amount, subject, date)\n"
+            "- R3: reads scheduled transactions, the balance, the user's IBAN and account info\n"
+            "Write one specific question for each researcher whose information is needed. Think "
+            "ahead to what the action will need (ids, amounts, recipients), including things a "
+            "file or past transaction may refer to that another researcher can find. Ask only "
+            "for information the action will actually use: do not ask for the balance, the "
+            "user's IBAN or account info unless the request is about them. Leave out "
+            "researchers that are not needed. " + _DATE + "\n"
+            "Reply with ONLY a JSON object:\n"
+            '{"questions": {"R1": "<question>", "R3": "<question>"}}'
+        ),
+    ),
     "files_researcher": Role(
         system=_RESEARCHER + "Your area: files the user mentions. If the request names no file, "
         "do not call any tool.\n" + _FACTS_FORMAT,
@@ -56,7 +77,8 @@ ROLES: dict[str, Role] = {
             "facts found by researchers, keyed like 'R1.bill_amount'. " + _DATE + "Turn the work "
             "that changes the account into sub-plans. Most requests need exactly ONE sub-plan. "
             "Use TWO only when the request has separate parts that change different things "
-            "(e.g. update the address AND refund a friend). Keep in one sub-plan: a single "
+            "(e.g. update the address AND refund a friend). Never return more than TWO: if "
+            "there are more parts, group them into two sub-plans by what they change. Keep in one sub-plan: a single "
             "payment, even if its amount is computed from several parts (send one payment of "
             "the total); and any actions on the same transaction or record. Never add a "
             "sub-plan that only checks or verifies something. Each sub-plan lists in 'uses' "
@@ -72,8 +94,11 @@ ROLES: dict[str, Role] = {
             "You are an executor in a banking assistant team. Carry out the sub-plan exactly, "
             "using only the facts given to you and your tools. Do not do anything the sub-plan "
             "does not ask for. " + _DATE + "Use today's date for any payment unless the "
-            "sub-plan says otherwise. When done, reply with ONLY a JSON object:\n"
-            '{"done": ["<one line per action taken>"]}'
+            "sub-plan says otherwise. List in 'done' only actions you actually performed with a "
+            "tool call; if you could not do something, explain why in 'blocked' instead. When "
+            "done, reply with ONLY a JSON object:\n"
+            '{"done": ["<one line per action taken>"], "blocked": "<empty, or why something '
+            'could not be done>"}'
         ),
         tools=[
             "send_money",

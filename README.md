@@ -26,7 +26,7 @@ Task ids are `user_task_0` to `user_task_15`. Options: `--model` and `--base-url
 
 ## How it works
 
-Three researchers (files, transaction history, account) gather facts with read-only tools. A planner splits the work into up to two sub-plans, each listing the facts it uses. Two executors carry out the sub-plans; they are the only agents that can change the world, and each sees only its own facts. A reporter answers the user.
+A research planner decides which of three researchers (files, transaction history, account) are needed and asks each one a question; they answer with read-only tools. A planner splits the work into up to two sub-plans, each listing the facts it uses. Two executors carry out the sub-plans; they are the only agents that can change the world, and each sees only its own facts. A reporter answers the user. `--layout researchers-first` runs the older layout, where all three researchers run without questions.
 
 The run record lists, for every step, the facts it read, its output, and its tool calls numbered per step. Recovery will follow these dependencies.
 
@@ -36,7 +36,7 @@ The run record lists, for every step, the facts it read, its output, and its too
 | --- | --- |
 | `lineage/roles.py` | Each role's instructions, allowed tools and output format |
 | `lineage/agent.py` | One agent's tool loop, recorded into the run record |
-| `lineage/workflow.py` | The order: researchers, planner, executors, reporter |
+| `lineage/workflow.py` | The order: research planner, researchers, planner, executors, reporter |
 | `lineage/trace.py` | The run record format |
 | `lineage/llm.py` | Client for any OpenAI-compatible server; reads `.env` |
 | `lineage/__main__.py` | Command line |

@@ -9,6 +9,7 @@ from pathlib import Path
 
 from .llm import LLM
 from .runner import run_task
+from .workflow import LAYOUTS
 
 
 def main():
@@ -17,10 +18,11 @@ def main():
     ap.add_argument("--model", help="overrides LLM_MODEL")
     ap.add_argument("--base-url", help="overrides LLM_BASE_URL")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--layout", choices=LAYOUTS, default=LAYOUTS[0])
     args = ap.parse_args()
 
     llm = LLM(model=args.model, base_url=args.base_url, seed=args.seed)
-    task, trace = run_task(args.task, llm)
+    task, trace = run_task(args.task, llm, layout=args.layout)
 
     print(f"TASK {args.task}: {task.PROMPT}\n")
     trace.print_summary()
