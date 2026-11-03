@@ -1,7 +1,7 @@
 """The fixed workflow, in one of two layouts:
 
-  researchers-first: 3 researchers -> planner -> up to 2 executors -> reporter
-  planner-first:     research planner (P0) -> the researchers it asks -> planner -> executors -> reporter
+  planner-first (default): research planner (P0) -> the researchers it asks -> planner -> executors -> reporter
+  researchers-first:       3 researchers -> planner -> up to 2 executors -> reporter
 
 The code decides the order and what each agent sees; the planners decide the per-task content.
 """
@@ -10,10 +10,10 @@ from .agent import run_agent
 from .trace import Trace
 
 RESEARCHERS = [("R1", "files_researcher"), ("R2", "history_researcher"), ("R3", "account_researcher")]
-LAYOUTS = ["researchers-first", "planner-first"]
+LAYOUTS = ["planner-first", "researchers-first"]  # the first is the default
 
 
-def run_workflow(prompt, env, runtime, llm, trace: Trace, layout: str = "researchers-first"):
+def run_workflow(prompt, env, runtime, llm, trace: Trace, layout: str = "planner-first"):
     ctx = dict(env=env, runtime=runtime, llm=llm, trace=trace)
 
     if layout == "planner-first":

@@ -14,7 +14,7 @@ BENCHMARK_VERSION = "v1.2.2"
 USABLE_TASKS = [0, 2, 3, 4, 5, 6, 9, 11, 12, 13, 14, 15]
 
 
-def run_task(task_id: str, llm, layout: str = "researchers-first"):
+def run_task(task_id: str, llm, layout: str = "planner-first"):
     suite = get_suite(BENCHMARK_VERSION, "banking")
     task = suite.get_user_task_by_id(task_id)
     env = task.init_environment(suite.load_and_inject_default_environment({}))
