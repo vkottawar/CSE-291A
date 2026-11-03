@@ -13,7 +13,8 @@ RESEARCHERS = [("R1", "files_researcher"), ("R2", "history_researcher"), ("R3", 
 LAYOUTS = ["planner-first", "researchers-first"]  # the first is the default
 
 
-def run_workflow(prompt, env, runtime, llm, trace: Trace, layout: str = "planner-first"):
+def run_workflow(prompt, env, runtime, llm, trace: Trace, layout: str = "planner-first", fault=None):
+    """fault: an optional FaultInjector (faults.py); without it the run is exactly the clean workflow."""
     ctx = dict(env=env, runtime=runtime, llm=llm, trace=trace)
 
     if layout == "planner-first":
@@ -30,6 +31,8 @@ def run_workflow(prompt, env, runtime, llm, trace: Trace, layout: str = "planner
     facts = {}
     for sid, role, inputs, reads in research:
         out = run_agent(sid, role, inputs, reads, **ctx)
+        if fault:
+            fault.on_researcher(sid, out)
         for f in (out or {}).get("facts", []):
             key = f"{sid}.{f['name']}"
             if key in facts:  # never let a second fact with the same name overwrite the first
@@ -55,7 +58,12 @@ def run_workflow(prompt, env, runtime, llm, trace: Trace, layout: str = "planner
         if missing:
             trace.warnings.append({"step": eid, "missing_facts": missing})
         subplan = {"goal": sub.get("goal"), "steps": sub.get("steps")}
-        results[eid] = run_agent(eid, "executor", {"subplan": subplan, "facts": given}, [f"P.subplans[{i}]", *given], **ctx)
+        if fault:
+            subplan, given = fault.on_subplan(eid, subplan, given)
+        hook = fault.on_tool_call if fault else None
+        results[eid] = run_agent(
+            eid, "executor", {"subplan": subplan, "facts": given}, [f"P.subplans[{i}]", *given], **ctx, arg_hook=hook
+        )
         # An executor's own report can't be trusted: flag claimed actions with no successful tool call.
         done = (results[eid] or {}).get("done") or []
         if done and not any(c.error is None for c in trace.steps[-1].tool_calls):
@@ -63,4 +71,6 @@ def run_workflow(prompt, env, runtime, llm, trace: Trace, layout: str = "planner
 
     reads = ["user.request", *sorted(facts), *[f"{e}.done" for e in results]]
     report = run_agent("REP", "reporter", {"request": prompt, "facts": facts, "executor_results": results}, reads, **ctx)
+    if fault:
+        fault.finish()
     return report

@@ -5,6 +5,7 @@ import time
 from agentdojo.functions_runtime import FunctionsRuntime
 from agentdojo.task_suite.load_suites import get_suite
 
+from .faults import FaultInjector, FaultSpec
 from .trace import Trace
 from .workflow import run_workflow
 
@@ -14,7 +15,9 @@ BENCHMARK_VERSION = "v1.2.2"
 USABLE_TASKS = [0, 2, 3, 4, 5, 6, 9, 11, 12, 13, 14, 15]
 
 
-def run_task(task_id: str, llm, layout: str = "planner-first"):
+def run_task(task_id: str, llm, layout: str = "planner-first", fault: FaultSpec | None = None, return_env=False):
+    if fault and fault.task != task_id:
+        raise ValueError(f"fault {fault.id} is for {fault.task}, not {task_id}")
     suite = get_suite(BENCHMARK_VERSION, "banking")
     task = suite.get_user_task_by_id(task_id)
     env = task.init_environment(suite.load_and_inject_default_environment({}))
@@ -22,12 +25,15 @@ def run_task(task_id: str, llm, layout: str = "planner-first"):
     runtime = FunctionsRuntime(suite.tools)
 
     trace = Trace(task_id=task_id, layout=layout)
+    injector = FaultInjector(fault, trace) if fault else None
     start = time.time()
     try:
-        report = run_workflow(task.PROMPT, env, runtime, llm, trace, layout=layout)
+        report = run_workflow(task.PROMPT, env, runtime, llm, trace, layout=layout, fault=injector)
         trace.utility = task.utility(report or "", pre_env, env)
     except Exception as e:
         trace.error = f"{type(e).__name__}: {e}"
         trace.utility = False
     trace.seconds = time.time() - start
-    return task, trace
+    if injector and not any(f["id"] == fault.id for f in trace.faults):
+        injector.finish()  # the run crashed before the end; still record whether the fault was placed
+    return (task, trace, env) if return_env else (task, trace)

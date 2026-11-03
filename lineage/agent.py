@@ -23,7 +23,8 @@ def tool_schemas(runtime, names):
     ]
 
 
-def run_agent(step_id, role_name, inputs, reads, env, runtime, llm, trace: Trace, max_turns=10):
+def run_agent(step_id, role_name, inputs, reads, env, runtime, llm, trace: Trace, max_turns=10, arg_hook=None):
+    """arg_hook(step_id, tool, args, call_no) -> args lets fault injection change a call before it runs."""
     role = ROLES[role_name]
     record = StepRecord(step_id=step_id, role=role_name, reads=reads)
     trace.steps.append(record)
@@ -41,6 +42,10 @@ def run_agent(step_id, role_name, inputs, reads, env, runtime, llm, trace: Trace
         record.prompt_tokens += reply.prompt_tokens
         record.completion_tokens += reply.completion_tokens
 
+        if reply.tool_calls and arg_hook:
+            # Before the call is added to the history, so the agent itself looks like it asked for it.
+            for n, c in enumerate(reply.tool_calls):
+                c.args = arg_hook(step_id, c.name, c.args, len(record.tool_calls) + n + 1)
         if reply.tool_calls:
             messages.append(
                 {

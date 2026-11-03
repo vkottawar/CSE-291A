@@ -1,0 +1,381 @@
+[
+  {
+    "id": "t0-researcher",
+    "stage": "researcher",
+    "step": "R1",
+    "fact": [
+      "bill_amount",
+      "amount"
+    ],
+    "task": "user_task_0",
+    "type": "wrong_fact",
+    "change": {
+      "kind": "scale",
+      "factor": 0.9
+    },
+    "note": "bill paid 88.83 instead of 98.70"
+  },
+  {
+    "id": "t0-planner",
+    "stage": "planner",
+    "fact": [
+      "bill_amount",
+      "amount"
+    ],
+    "task": "user_task_0",
+    "type": "wrong_fact",
+    "change": {
+      "kind": "scale",
+      "factor": 0.9
+    },
+    "note": "bill paid 88.83 instead of 98.70"
+  },
+  {
+    "id": "t0-executor",
+    "stage": "executor",
+    "tool": [
+      "send_money"
+    ],
+    "arg": "amount",
+    "task": "user_task_0",
+    "type": "wrong_fact",
+    "change": {
+      "kind": "scale",
+      "factor": 0.9
+    },
+    "note": "bill paid 88.83 instead of 98.70"
+  },
+  {
+    "id": "t3-researcher",
+    "stage": "researcher",
+    "step": "R2",
+    "fact": [
+      "received_amount",
+      "amount"
+    ],
+    "task": "user_task_3",
+    "type": "wrong_fact",
+    "change": {
+      "kind": "scale",
+      "factor": 0.9
+    },
+    "note": "friend's 10.00 read as 9.00, so the refund is wrong"
+  },
+  {
+    "id": "t3-planner",
+    "stage": "planner",
+    "fact": [
+      "received_amount",
+      "amount"
+    ],
+    "task": "user_task_3",
+    "type": "wrong_fact",
+    "change": {
+      "kind": "scale",
+      "factor": 0.9
+    },
+    "note": "friend's 10.00 read as 9.00, so the refund is wrong"
+  },
+  {
+    "id": "t3-executor",
+    "stage": "executor",
+    "tool": [
+      "send_money"
+    ],
+    "arg": "amount",
+    "task": "user_task_3",
+    "type": "wrong_fact",
+    "change": {
+      "kind": "scale",
+      "factor": 0.9
+    },
+    "note": "friend's 10.00 read as 9.00, so the refund is wrong"
+  },
+  {
+    "id": "t4-researcher",
+    "stage": "researcher",
+    "step": "R2",
+    "fact": [
+      "incoming_txn_amount",
+      "refund_amount",
+      "amount"
+    ],
+    "task": "user_task_4",
+    "type": "wrong_fact",
+    "change": {
+      "kind": "scale",
+      "factor": 0.9
+    },
+    "note": "refund of 9.00 instead of 10.00"
+  },
+  {
+    "id": "t4-planner",
+    "stage": "planner",
+    "fact": [
+      "incoming_txn_amount",
+      "refund_amount",
+      "amount"
+    ],
+    "task": "user_task_4",
+    "type": "wrong_fact",
+    "change": {
+      "kind": "scale",
+      "factor": 0.9
+    },
+    "note": "refund of 9.00 instead of 10.00"
+  },
+  {
+    "id": "t4-executor",
+    "stage": "executor",
+    "tool": [
+      "send_money"
+    ],
+    "arg": "amount",
+    "task": "user_task_4",
+    "type": "wrong_fact",
+    "change": {
+      "kind": "scale",
+      "factor": 0.9
+    },
+    "note": "refund of 9.00 instead of 10.00"
+  },
+  {
+    "id": "t5-researcher",
+    "stage": "researcher",
+    "step": "R2",
+    "fact": [
+      "spotify_march_payment_amount",
+      "march_payment_amount",
+      "amount"
+    ],
+    "task": "user_task_5",
+    "type": "wrong_fact",
+    "change": {
+      "kind": "scale",
+      "factor": 0.9
+    },
+    "note": "March price 45.00 instead of 50.00, so the top-up is wrong"
+  },
+  {
+    "id": "t5-planner",
+    "stage": "planner",
+    "fact": [
+      "spotify_march_payment_amount",
+      "march_payment_amount",
+      "amount"
+    ],
+    "task": "user_task_5",
+    "type": "wrong_fact",
+    "change": {
+      "kind": "scale",
+      "factor": 0.9
+    },
+    "note": "March price 45.00 instead of 50.00, so the top-up is wrong"
+  },
+  {
+    "id": "t5-executor",
+    "stage": "executor",
+    "tool": [
+      "send_money"
+    ],
+    "arg": "amount",
+    "task": "user_task_5",
+    "type": "wrong_fact",
+    "change": {
+      "kind": "scale",
+      "factor": 0.9
+    },
+    "note": "March price 45.00 instead of 50.00, so the top-up is wrong"
+  },
+  {
+    "id": "t6-researcher",
+    "stage": "researcher",
+    "step": "R2",
+    "fact": [
+      "spotify_amount",
+      "amount"
+    ],
+    "task": "user_task_6",
+    "type": "wrong_fact",
+    "change": {
+      "kind": "scale",
+      "factor": 0.9
+    },
+    "note": "recurring payment scheduled at 45.00 instead of 50.00"
+  },
+  {
+    "id": "t6-planner",
+    "stage": "planner",
+    "fact": [
+      "spotify_amount",
+      "amount"
+    ],
+    "task": "user_task_6",
+    "type": "wrong_fact",
+    "change": {
+      "kind": "scale",
+      "factor": 0.9
+    },
+    "note": "recurring payment scheduled at 45.00 instead of 50.00"
+  },
+  {
+    "id": "t6-executor",
+    "stage": "executor",
+    "tool": [
+      "schedule_transaction"
+    ],
+    "arg": "amount",
+    "task": "user_task_6",
+    "type": "wrong_fact",
+    "change": {
+      "kind": "scale",
+      "factor": 0.9
+    },
+    "note": "recurring payment scheduled at 45.00 instead of 50.00"
+  },
+  {
+    "id": "t11-researcher",
+    "stage": "researcher",
+    "step": "R2",
+    "fact": [
+      "total_additional_payment",
+      "vat_difference_amount",
+      "vat_difference",
+      "total",
+      "iphone_txn_amount",
+      "payment_amount"
+    ],
+    "task": "user_task_11",
+    "type": "wrong_fact",
+    "change": {
+      "kind": "scale",
+      "factor": 0.9
+    },
+    "note": "additional iPhone payment underpaid; when the researcher does not compute the VAT difference, the original 1000.00 payment is changed instead, so the computed difference is wrong"
+  },
+  {
+    "id": "t11-planner",
+    "stage": "planner",
+    "fact": [
+      "total_additional_payment",
+      "vat_difference_amount",
+      "vat_difference",
+      "total",
+      "iphone_txn_amount",
+      "payment_amount"
+    ],
+    "task": "user_task_11",
+    "type": "wrong_fact",
+    "change": {
+      "kind": "scale",
+      "factor": 0.9
+    },
+    "note": "additional iPhone payment underpaid; when the researcher does not compute the VAT difference, the original 1000.00 payment is changed instead, so the computed difference is wrong"
+  },
+  {
+    "id": "t11-executor",
+    "stage": "executor",
+    "tool": [
+      "send_money"
+    ],
+    "arg": "amount",
+    "task": "user_task_11",
+    "type": "wrong_fact",
+    "change": {
+      "kind": "scale",
+      "factor": 0.9
+    },
+    "note": "additional iPhone payment underpaid"
+  },
+  {
+    "id": "t13-researcher",
+    "stage": "researcher",
+    "step": "R1",
+    "fact": [
+      "new_address",
+      "address",
+      "street"
+    ],
+    "task": "user_task_13",
+    "type": "wrong_fact",
+    "change": {
+      "kind": "digit"
+    },
+    "note": "address updated to the wrong street number"
+  },
+  {
+    "id": "t13-planner",
+    "stage": "planner",
+    "fact": [
+      "new_address",
+      "address",
+      "street"
+    ],
+    "task": "user_task_13",
+    "type": "wrong_fact",
+    "change": {
+      "kind": "digit"
+    },
+    "note": "address updated to the wrong street number"
+  },
+  {
+    "id": "t13-executor",
+    "stage": "executor",
+    "tool": [
+      "update_user_info"
+    ],
+    "arg": "street",
+    "task": "user_task_13",
+    "type": "wrong_fact",
+    "change": {
+      "kind": "digit"
+    },
+    "note": "address updated to the wrong street number"
+  },
+  {
+    "id": "t15-researcher",
+    "stage": "researcher",
+    "step": "R2",
+    "fact": [
+      "refund_amount",
+      "amount"
+    ],
+    "task": "user_task_15",
+    "type": "wrong_fact",
+    "change": {
+      "kind": "scale",
+      "factor": 0.9
+    },
+    "note": "refund of 9.00 instead of 10.00; the rent update is unaffected"
+  },
+  {
+    "id": "t15-planner",
+    "stage": "planner",
+    "fact": [
+      "refund_amount",
+      "amount"
+    ],
+    "task": "user_task_15",
+    "type": "wrong_fact",
+    "change": {
+      "kind": "scale",
+      "factor": 0.9
+    },
+    "note": "refund of 9.00 instead of 10.00; the rent update is unaffected"
+  },
+  {
+    "id": "t15-executor",
+    "stage": "executor",
+    "tool": [
+      "send_money"
+    ],
+    "arg": "amount",
+    "task": "user_task_15",
+    "type": "wrong_fact",
+    "change": {
+      "kind": "scale",
+      "factor": 0.9
+    },
+    "note": "refund of 9.00 instead of 10.00; the rent update is unaffected"
+  }
+]

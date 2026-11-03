@@ -40,3 +40,27 @@ The run record lists, for every step, the facts it read, its output, and its too
 | `lineage/trace.py` | The run record format |
 | `lineage/llm.py` | Client for any OpenAI-compatible server; reads `.env` |
 | `lineage/__main__.py` | Command line |
+
+## Inject a wrong fact
+
+Fault specs live in `faults/wrong_fact.json`: 8 reliable tasks (0, 3, 4, 5, 6, 11, 13, 15) × 3 stages. For each task the same fact gets the same wrong value at every stage, so only the place it enters differs:
+
+- `researcher`: one fact in a researcher's output is changed before the planner sees it.
+- `planner`: the planner hands one executor a wrong value for a fact its sub-plan uses.
+- `executor`: one argument of one world-changing tool call is changed before it runs.
+
+```bash
+.venv/bin/python -m lineage --fault faults/wrong_fact.json --fault-id t0-researcher   # one run
+.venv/bin/python -m lineage.fault_batch --tasks 0 --repeats 1                         # one task, all 3 stages
+.venv/bin/python -m lineage.fault_batch                                               # all 24 specs × 3 repeats
+```
+
+`fault_batch` writes each run record, the banking world after the run (`*.world.json`, the starting point for restart baselines) and `runs.csv` to `runs/faults_<time>/`. Every run record has a `faults` list saying what was changed, where, and the original and injected values. `applied: false` means the fault never found its target (not placed), which is different from a fault that was placed but ignored. The spec format is documented at the top of `lineage/faults.py`.
+
+AgentDojo's checks for tasks 5 and 6 pass whatever amount is paid (5 accepts the March payment already in history; 6 looks at the existing Spotify standing order), so use the `actions` column, not `passed`, to see whether those outcomes changed.
+
+Tests (no API key needed; a fake model replays the committed clean runs):
+
+```bash
+.venv/bin/python -m unittest tests.test_faults -v
+```
