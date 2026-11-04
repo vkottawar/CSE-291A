@@ -1,0 +1,146 @@
+#!/usr/bin/env python3
+"""Git pre-commit hook: secrets scan and static analysis on staged changes."""
+
+import ast
+import json
+import os
+import re
+import subprocess
+import sys
+
+SECRET_REGEX = re.compile(
+    r"(sk-[A-Za-z0-9_-]{12,}"
+    r"|ghp_[A-Za-z0-9]{20,}"
+    r"|AKIA[0-9A-Z]{16}"
+    r"|AIza[0-9A-Za-z_-]{35}"
+    r"|-----BEGIN [A-Z ]+ PRIVATE KEY-----"
+    r"|(?:LLM_API_KEY|api_key|API_KEY)\s*=\s*['\"][A-Za-z0-9_.-]{8,}['\"])"
+)
+
+DANGEROUS_MODULES = {"pickle", "marshal", "shelve"}
+DANGEROUS_CALLS = {"eval", "exec", "compile", "__import__"}
+
+
+def repo_root() -> str:
+    return subprocess.check_output(
+        ["git", "rev-parse", "--show-toplevel"], text=True
+    ).strip()
+
+
+def load_env_secrets(root: str) -> list[str]:
+    secrets = []
+    env_path = os.path.join(root, ".env")
+    if os.path.isfile(env_path):
+        with open(env_path, errors="ignore") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, val = line.split("=", 1)
+                val = val.strip().strip("'\"")
+                if "KEY" in key.upper() or "TOKEN" in key.upper() or "SECRET" in key.upper():
+                    if len(val) >= 6:
+                        secrets.append(val)
+    return secrets
+
+
+def staged_files() -> list[str]:
+    out = subprocess.check_output(
+        ["git", "diff", "--cached", "--name-only", "--diff-filter=ACMR"], text=True
+    )
+    return [line.strip() for line in out.splitlines() if line.strip()]
+
+
+def staged_content(path: str) -> bytes:
+    return subprocess.check_output(["git", "show", f":{path}"])
+
+
+def main() -> int:
+    root = repo_root()
+    os.chdir(root)
+    files = staged_files()
+    if not files:
+        return 0
+
+    env_secrets = load_env_secrets(root)
+    errors = []
+
+    for rel in files:
+        base = os.path.basename(rel)
+        if base == ".env" or (base.endswith(".env") and base != ".env.example"):
+            errors.append(f"{rel}: refusing to commit environment secret file")
+            continue
+
+        try:
+            raw = staged_content(rel)
+            text = raw.decode("utf-8", errors="ignore")
+        except Exception as exc:
+            errors.append(f"{rel}: could not read staged blob ({exc})")
+            continue
+
+        # 1. Exact .env secret check
+        for s in env_secrets:
+            if s in text:
+                errors.append(f"{rel}: contains actual secret value from .env")
+
+        # 2. Secret pattern scan
+        for match in SECRET_REGEX.finditer(text):
+            snippet = match.group(0)[:12] + "..."
+            errors.append(f"{rel}: potential secret/token matched ({snippet})")
+
+        # 3. Python static checks
+        if rel.endswith(".py"):
+            try:
+                tree = ast.parse(text, filename=rel)
+            except SyntaxError as exc:
+                errors.append(f"{rel}:{exc.lineno}: Python SyntaxError: {exc.msg}")
+                continue
+
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Import):
+                    for alias in node.names:
+                        mod = alias.name.split(".")[0]
+                        if mod in DANGEROUS_MODULES:
+                            errors.append(f"{rel}:{node.lineno}: unsafe import '{alias.name}'")
+                elif isinstance(node, ast.ImportFrom) and node.module:
+                    mod = node.module.split(".")[0]
+                    if mod in DANGEROUS_MODULES:
+                        errors.append(f"{rel}:{node.lineno}: unsafe import from '{node.module}'")
+                elif isinstance(node, ast.Call):
+                    if isinstance(node.func, ast.Name) and node.func.id in DANGEROUS_CALLS:
+                        errors.append(f"{rel}:{node.lineno}: unsafe call '{node.func.id}()'")
+                    elif isinstance(node.func, ast.Attribute):
+                        if (
+                            isinstance(node.func.value, ast.Name)
+                            and node.func.value.id == "os"
+                            and node.func.attr in {"system", "popen"}
+                        ):
+                            errors.append(f"{rel}:{node.lineno}: unsafe call 'os.{node.func.attr}()'")
+                        elif (
+                            isinstance(node.func.value, ast.Name)
+                            and node.func.value.id == "yaml"
+                            and node.func.attr == "load"
+                        ):
+                            errors.append(f"{rel}:{node.lineno}: unsafe 'yaml.load()' without SafeLoader")
+                elif isinstance(node, ast.ExceptHandler) and node.type is None:
+                    errors.append(f"{rel}:{node.lineno}: bare 'except:' is not allowed")
+
+        # 4. JSON syntax check
+        elif rel.endswith(".json"):
+            try:
+                json.loads(text)
+            except Exception as exc:
+                errors.append(f"{rel}: invalid JSON ({exc})")
+
+    if errors:
+        print("[pre-commit] Static & secrets check FAILED:", file=sys.stderr)
+        for err in errors:
+            print(f"  - {err}", file=sys.stderr)
+        return 1
+
+    print(f"[pre-commit] Static & secrets scan passed ({len(files)} staged file(s)).")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
