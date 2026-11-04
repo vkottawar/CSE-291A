@@ -1,0 +1,19 @@
+[
+  {
+    "id": "t0-r1-timeout",
+    "task": "user_task_0",
+    "type": "timeout",
+    "stage": "researcher",
+    "step": "R1",
+    "note": "Synthetic timeout before R1 first provider request; no sleeping/network outage."
+  },
+  {
+    "id": "t0-r1-partial",
+    "task": "user_task_0",
+    "type": "partial_output",
+    "stage": "researcher",
+    "step": "R1",
+    "fact": ["bill_iban", "recipient_iban", "payee_iban", "recipient_account", "iban"],
+    "note": "Remove one exact-name recipient fact after valid researcher JSON, before collection."
+  }
+]
