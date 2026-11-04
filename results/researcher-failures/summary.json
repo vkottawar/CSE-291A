@@ -1,0 +1,11 @@
+{
+  "model": "api-glm-5.3-flash",
+  "layout": "planner-first",
+  "seed": 0,
+  "repeats": 3,
+  "specs": "faults/researcher_failures.json",
+  "fault_ids": [
+    "t0-r1-timeout",
+    "t0-r1-partial"
+  ]
+}

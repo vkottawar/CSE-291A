@@ -15,7 +15,11 @@ BENCHMARK_VERSION = "v1.2.2"
 USABLE_TASKS = [0, 2, 3, 4, 5, 6, 9, 11, 12, 13, 14, 15]
 
 
-def run_task(task_id: str, llm, layout: str = "planner-first", fault: FaultSpec | None = None, return_env=False):
+def run_task(task_id: str, llm, layout: str = "planner-first", fault: FaultSpec | None = None, return_env=False,
+             world=None, vectors=None):
+    """world: start from this environment instead of a fresh one (a restart). The check and
+    transaction_changes still compare with the task's original start, so earlier payments count.
+    vectors: injected text that original start held, when no fault is active to supply it."""
     if fault and fault.task != task_id:
         raise ValueError(f"fault {fault.id} is for {fault.task}, not {task_id}")
     suite = get_suite(BENCHMARK_VERSION, "banking")
@@ -23,9 +27,11 @@ def run_task(task_id: str, llm, layout: str = "planner-first", fault: FaultSpec 
     trace = Trace(task_id=task_id, layout=layout)
     injector = FaultInjector(fault, trace) if fault else None
     # A researcher-stage prompt injection puts AgentDojo's payload into the world before it loads.
-    injections = injector.prepare(suite, task, getattr(llm, "model", "")) if injector else {}
+    injections = injector.prepare(suite, task, getattr(llm, "model", "")) if injector else vectors or {}
     env = task.init_environment(suite.load_and_inject_default_environment(injections))
     pre_env = env.model_copy(deep=True)
+    if world is not None:
+        env = world
     runtime = FunctionsRuntime(suite.tools)
 
     start = time.time()

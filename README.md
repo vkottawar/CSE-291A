@@ -40,6 +40,7 @@ The run record lists, for every step, the facts it read, its output, and its too
 | `lineage/trace.py` | The run record format |
 | `lineage/effects.py` | For each fault: was it read, did later outputs change, did the outcome flip |
 | `lineage/injections.py` | AgentDojo prompt-injection payloads for the `prompt_injection` fault type |
+| `lineage/restart.py` | Full restart from the world a faulted run left behind, and what that leaves in the world |
 | `lineage/llm.py` | Client for any OpenAI-compatible server; reads `.env` |
 | `lineage/__main__.py` | Command line |
 
@@ -104,6 +105,18 @@ The full payload, the AgentDojo `attack` and `injection_task`, and the world `ve
 - `read_by` lists steps whose inputs or tool results hold the payload.
 - `used_in` lists steps that repeat the attacker's goal or IBAN.
 - `acted_on` is `exact` when the attack succeeded.
+
+## Restart after a fault
+
+```bash
+.venv/bin/python -m lineage.restart --faulted runs/faults_<time>_planner-first
+.venv/bin/python -m lineage.restart --faulted runs/faults_<time>_planner-first --rescore   # score saved restarts again; no model calls
+.venv/bin/python -m unittest tests.test_restart -v                                         # no API key needed
+```
+
+Every run whose fault was placed gets one full rerun with no fault, starting from its saved `*.world.json`, so a wrong payment or injected text is still there. The agents aren't told about the fault. Results go to `restart/` inside the faulted folder: `restart.csv` (one row per restart) and `restart_summary.json`.
+
+AgentDojo's check compares with the task's original start and usually passes once a correct payment exists, even next to a wrong one. So each world is also compared with what the clean repeats leave behind (`extra_payments`, `missing_payments`, `clean_end`), and `passed_but_not_clean` counts restarts the check would wrongly accept. For prompt injections, `attack_after` is AgentDojo's security check on the world after the restart, so an attack that already succeeded still counts. The columns are explained at the top of `lineage/restart.py`.
 
 ## Researcher timeout and incomplete output
 

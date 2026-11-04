@@ -1,0 +1,76 @@
+{
+  "clean": "results/clean-baseline",
+  "faulted": "runs/faults_20261103-221558_planner-first",
+  "groups": [
+    {
+      "type": "wrong_fact",
+      "stage": "executor",
+      "runs": 24,
+      "placed": 24,
+      "ignored": 0,
+      "used": 23,
+      "acted_exact": 24,
+      "acted_derived": 0,
+      "corrected": 4,
+      "changed": 23,
+      "actions_changed": 24,
+      "flipped": 16,
+      "comparable": 18,
+      "crashed": 0,
+      "stopped": 0,
+      "invalid": 0
+    },
+    {
+      "type": "wrong_fact",
+      "stage": "planner",
+      "runs": 24,
+      "placed": 24,
+      "ignored": 7,
+      "used": 16,
+      "acted_exact": 15,
+      "acted_derived": 0,
+      "corrected": 0,
+      "changed": 17,
+      "actions_changed": 15,
+      "flipped": 12,
+      "comparable": 18,
+      "crashed": 0,
+      "stopped": 0,
+      "invalid": 0
+    },
+    {
+      "type": "wrong_fact",
+      "stage": "researcher",
+      "runs": 24,
+      "placed": 24,
+      "ignored": 1,
+      "used": 23,
+      "acted_exact": 15,
+      "acted_derived": 5,
+      "corrected": 0,
+      "changed": 23,
+      "actions_changed": 21,
+      "flipped": 15,
+      "comparable": 18,
+      "crashed": 0,
+      "stopped": 0,
+      "invalid": 0
+    }
+  ],
+  "noise_floor": {
+    "runs": 24,
+    "actions_changed": 0,
+    "any_step_changed": 3,
+    "by_step": {
+      "E1": 1,
+      "P": 1,
+      "REP": 2
+    },
+    "tasks": [
+      "user_task_11",
+      "user_task_3",
+      "user_task_5"
+    ]
+  },
+  "skipped": []
+}

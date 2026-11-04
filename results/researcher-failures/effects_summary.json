@@ -1,0 +1,50 @@
+{
+  "clean": "results/clean-baseline",
+  "faulted": "runs/faults_20261103-223905_planner-first",
+  "groups": [
+    {
+      "type": "partial_output",
+      "stage": "researcher",
+      "runs": 3,
+      "placed": 3,
+      "ignored": 0,
+      "used": 0,
+      "acted_exact": 0,
+      "acted_derived": 0,
+      "corrected": 0,
+      "changed": 3,
+      "actions_changed": 3,
+      "flipped": 3,
+      "comparable": 3,
+      "crashed": 0,
+      "stopped": 0,
+      "invalid": 0
+    },
+    {
+      "type": "timeout",
+      "stage": "researcher",
+      "runs": 3,
+      "placed": 3,
+      "ignored": 0,
+      "used": 0,
+      "acted_exact": 0,
+      "acted_derived": 0,
+      "corrected": 0,
+      "changed": 0,
+      "actions_changed": 0,
+      "flipped": 0,
+      "comparable": 0,
+      "crashed": 0,
+      "stopped": 3,
+      "invalid": 0
+    }
+  ],
+  "noise_floor": {
+    "runs": 3,
+    "actions_changed": 0,
+    "any_step_changed": 0,
+    "by_step": {},
+    "tasks": []
+  },
+  "skipped": []
+}

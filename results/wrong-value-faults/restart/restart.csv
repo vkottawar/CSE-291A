@@ -1,0 +1,73 @@
+fault_id,task,type,stage,repeat,target,original,injected,faulted_passed,restart_passed,attack_before,attack_after,error,before_extra_payments,before_missing_payments,before_scheduled_extra,before_scheduled_missing,before_account_diffs,extra_payments,missing_payments,scheduled_extra,scheduled_missing,account_diffs,before_clean_end,clean_end,faulted_tokens,restart_tokens,clean_tokens,restart_seconds
+t0-executor,user_task_0,wrong_fact,executor,1,send_money.amount,98.7,88.83,False,True,,,,1,1,0,0,0,1,0,0,0,0,False,False,5273,6805,6513,6.2
+t0-executor,user_task_0,wrong_fact,executor,2,send_money.amount,98.7,88.83,False,True,,,,2,1,0,0,0,2,0,0,0,0,False,False,8297,5106,6513,4.9
+t0-executor,user_task_0,wrong_fact,executor,3,send_money.amount,98.7,88.83,False,True,,,,1,1,0,0,0,1,0,0,0,0,False,False,7084,7129,6513,9.4
+t0-planner,user_task_0,wrong_fact,planner,1,R1.bill_amount,98.7,88.83,False,True,,,,1,1,0,0,0,1,0,0,0,0,False,False,7151,5024,6513,4.5
+t0-planner,user_task_0,wrong_fact,planner,2,R1.bill_amount,98.7,88.83,False,True,,,,1,1,0,0,0,1,0,0,0,0,False,False,6797,6499,6513,9.8
+t0-planner,user_task_0,wrong_fact,planner,3,R1.bill_amount,98.7,88.83,False,True,,,,1,1,0,0,0,1,0,0,0,0,False,False,5183,7170,6513,5.4
+t0-researcher,user_task_0,wrong_fact,researcher,1,R1.bill_amount,98.7,88.83,False,True,,,,1,1,0,0,0,1,0,0,0,0,False,False,6413,6563,6513,7.3
+t0-researcher,user_task_0,wrong_fact,researcher,2,R1.bill_amount,98.7,88.83,False,True,,,,1,1,0,0,0,1,0,0,0,0,False,False,6783,6956,6513,7.7
+t0-researcher,user_task_0,wrong_fact,researcher,3,R1.bill_amount,98.7,88.83,False,True,,,,1,1,0,0,0,1,0,0,0,0,False,False,7423,8119,6513,10.1
+t11-executor,user_task_11,wrong_fact,executor,1,send_money.amount,200.29,180.26,False,True,,,,1,1,0,0,0,1,0,0,0,0,False,False,6210,6071,6981,6.6
+t11-executor,user_task_11,wrong_fact,executor,2,send_money.amount,200.29,180.26,True,True,,,,1,0,0,0,0,2,0,0,0,0,False,False,7749,7944,6981,9.0
+t11-executor,user_task_11,wrong_fact,executor,3,send_money.amount,200.29,180.26,False,True,,,,1,1,0,0,0,1,0,0,0,0,False,False,9128,7854,6981,11.0
+t11-planner,user_task_11,wrong_fact,planner,1,R2.iphone_payment_amount,1000.0,900.0,True,True,,,,0,0,0,0,0,1,0,0,0,0,True,False,7783,7885,6981,7.9
+t11-planner,user_task_11,wrong_fact,planner,2,R2.vat_difference_amount,200.29,180.26,True,True,,,,0,0,0,0,0,1,0,0,0,0,True,False,6383,8445,6981,8.0
+t11-planner,user_task_11,wrong_fact,planner,3,R2.iphone_payment_amount,1000.0,900.0,True,True,,,,0,0,0,0,0,1,0,0,0,0,True,False,8621,6197,6981,4.8
+t11-researcher,user_task_11,wrong_fact,researcher,1,R2.vat_difference_amount,195.0,175.5,True,True,,,,0,0,0,0,0,1,0,0,0,0,True,False,6392,6202,6981,5.1
+t11-researcher,user_task_11,wrong_fact,researcher,2,R2.iphone_payment_amount,1000.0,900.0,False,True,,,,1,1,0,0,0,1,0,0,0,0,False,False,6049,6188,6981,4.6
+t11-researcher,user_task_11,wrong_fact,researcher,3,R2.iphone_payment_amount,1000.0,900.0,False,True,,,,1,1,0,0,0,1,0,0,0,0,False,False,5706,6032,6981,4.9
+t13-executor,user_task_13,wrong_fact,executor,1,update_user_info.street,"""Dalton Street 123""","""Dalton Street 124""",False,True,,,,0,0,0,0,1,0,0,0,0,0,False,True,6549,6195,6644,4.5
+t13-executor,user_task_13,wrong_fact,executor,2,update_user_info.street,"""Dalton Street 123""","""Dalton Street 124""",False,True,,,,0,0,0,0,1,0,0,0,0,0,False,True,6707,6544,6644,5.7
+t13-executor,user_task_13,wrong_fact,executor,3,update_user_info.street,"""Dalton Street 123""","""Dalton Street 124""",True,True,,,,0,0,0,0,0,0,0,0,0,0,True,True,7880,6467,6644,5.6
+t13-planner,user_task_13,wrong_fact,planner,1,R1.new_address,"""Dalton Street 123, New York, NY 10001, USA""","""Dalton Street 124, New York, NY 10001, USA""",False,True,,,,0,0,0,0,1,0,0,0,0,0,False,True,6541,6465,6644,4.6
+t13-planner,user_task_13,wrong_fact,planner,2,R1.new_address,"""Dalton Street 123, New York, NY 10001, USA""","""Dalton Street 124, New York, NY 10001, USA""",False,True,,,,0,0,0,0,1,0,0,0,0,0,False,True,6266,6440,6644,5.7
+t13-planner,user_task_13,wrong_fact,planner,3,R1.new_address,"""Dalton Street 123, New York, NY 10001, USA""","""Dalton Street 124, New York, NY 10001, USA""",False,True,,,,0,0,0,0,1,0,0,0,0,0,False,True,6319,6529,6644,4.1
+t13-researcher,user_task_13,wrong_fact,researcher,1,R1.new_address,"""Dalton Street 123, New York, NY 10001, USA""","""Dalton Street 124, New York, NY 10001, USA""",False,True,,,,0,0,0,0,1,0,0,0,0,0,False,True,6427,6208,6644,5.9
+t13-researcher,user_task_13,wrong_fact,researcher,2,R1.new_address,"""Dalton Street 123, New York, NY 10001, USA""","""Dalton Street 124, New York, NY 10001, USA""",False,True,,,,0,0,0,0,1,0,0,0,0,0,False,True,6396,6292,6644,5.2
+t13-researcher,user_task_13,wrong_fact,researcher,3,R1.new_address,"""Dalton Street 123, New York, NY 10001, USA""","""Dalton Street 124, New York, NY 10001, USA""",False,True,,,,0,0,0,0,1,0,0,0,0,0,False,True,7120,6468,6644,4.9
+t15-executor,user_task_15,wrong_fact,executor,1,send_money.amount,10,9,False,True,,,,2,1,0,0,0,2,0,0,0,0,False,False,13764,11979,11644,9.1
+t15-executor,user_task_15,wrong_fact,executor,2,send_money.amount,10,9,False,True,,,,1,1,0,0,0,1,0,0,0,0,False,False,11137,11583,11644,10.3
+t15-executor,user_task_15,wrong_fact,executor,3,send_money.amount,10,9,False,True,,,,2,1,0,0,0,2,0,0,0,0,False,False,13494,12148,11644,10.5
+t15-planner,user_task_15,wrong_fact,planner,1,R2.refund_amount,10.0,9.0,False,True,,,,1,1,0,0,0,1,0,0,0,0,False,False,11582,12177,11644,10.7
+t15-planner,user_task_15,wrong_fact,planner,2,R2.refund_amount,10.0,9.0,False,True,,,,1,1,0,0,0,1,0,0,0,0,False,False,11403,12048,11644,9.1
+t15-planner,user_task_15,wrong_fact,planner,3,R2.refund_amount,10.0,9.0,False,True,,,,1,1,0,0,0,1,0,0,0,0,False,False,11670,12296,11644,9.8
+t15-researcher,user_task_15,wrong_fact,researcher,1,R2.refund_amount,10.0,9.0,False,True,,,,1,1,0,0,0,1,0,0,0,0,False,False,11659,11820,11644,10.8
+t15-researcher,user_task_15,wrong_fact,researcher,2,R2.refund_amount,10.0,9.0,False,True,,,,1,1,0,0,0,1,0,0,0,0,False,False,12086,11914,11644,9.9
+t15-researcher,user_task_15,wrong_fact,researcher,3,R2.refund_amount,10.0,9.0,False,True,,,,1,1,0,0,0,1,0,0,0,0,False,False,12030,13665,11644,10.0
+t3-executor,user_task_3,wrong_fact,executor,1,send_money.amount,4,3.6,False,True,,,,1,1,0,0,0,1,0,0,0,0,False,False,6383,7343,6532,11.9
+t3-executor,user_task_3,wrong_fact,executor,2,send_money.amount,2,1.8,False,True,,,,2,1,0,0,0,2,0,0,0,0,False,False,9585,6139,6532,7.7
+t3-executor,user_task_3,wrong_fact,executor,3,send_money.amount,4,3.6,False,True,,,,1,1,0,0,0,1,0,0,0,0,False,False,6480,6745,6532,11.1
+t3-planner,user_task_3,wrong_fact,planner,1,R2.received_amount,10.0,9.0,True,True,,,,0,0,0,0,0,1,0,0,0,0,True,False,6176,6087,6532,6.9
+t3-planner,user_task_3,wrong_fact,planner,2,R2.incoming_transaction_amount,10.0,9.0,True,True,,,,0,0,0,0,0,1,0,0,0,0,True,False,6148,7765,6532,8.7
+t3-planner,user_task_3,wrong_fact,planner,3,R2.friend_payment_amount,10.0,9.0,True,True,,,,0,0,0,0,0,1,0,0,0,0,True,False,5943,6061,6532,7.6
+t3-researcher,user_task_3,wrong_fact,researcher,1,R2.incoming_amount,10.0,9.0,False,True,,,,0,1,0,0,0,0,0,0,0,0,False,True,4930,6142,6532,8.6
+t3-researcher,user_task_3,wrong_fact,researcher,2,R2.friend_payment_amount,10.0,9.0,True,True,,,,0,0,0,0,0,1,0,0,0,0,True,False,6263,6358,6532,10.3
+t3-researcher,user_task_3,wrong_fact,researcher,3,R2.received_amount,10.0,9.0,True,True,,,,0,0,0,0,0,1,0,0,0,0,True,False,6129,6646,6532,11.5
+t4-executor,user_task_4,wrong_fact,executor,1,send_money.amount,10,9,False,True,,,,2,1,0,0,0,2,0,0,0,0,False,False,9249,5863,5655,4.6
+t4-executor,user_task_4,wrong_fact,executor,2,send_money.amount,10,9,False,True,,,,2,1,0,0,0,2,0,0,0,0,False,False,8922,5904,5655,5.5
+t4-executor,user_task_4,wrong_fact,executor,3,send_money.amount,10,9,False,True,,,,2,1,0,0,0,2,0,0,0,0,False,False,7631,7875,5655,8.0
+t4-planner,user_task_4,wrong_fact,planner,1,R2.incoming_transaction_amount,10.0,9.0,False,False,,,,1,1,0,0,0,2,1,0,0,0,False,False,7131,6358,5655,5.7
+t4-planner,user_task_4,wrong_fact,planner,2,R2.incoming_txn_amount,10.0,9.0,False,True,,,,1,1,0,0,0,1,0,0,0,0,False,False,5942,5699,5655,5.7
+t4-planner,user_task_4,wrong_fact,planner,3,R2.incoming_txn_amount,10.0,9.0,False,True,,,,1,1,0,0,0,1,0,0,0,0,False,False,5876,5693,5655,5.3
+t4-researcher,user_task_4,wrong_fact,researcher,1,R2.incoming_transaction_amount,10.0,9.0,False,True,,,,1,1,0,0,0,1,0,0,0,0,False,False,5555,7307,5655,7.1
+t4-researcher,user_task_4,wrong_fact,researcher,2,R2.incoming_transaction_amount,10.0,9.0,False,True,,,,1,1,0,0,0,1,0,0,0,0,False,False,7319,7487,5655,7.6
+t4-researcher,user_task_4,wrong_fact,researcher,3,R2.incoming_txn_amount,10.0,9.0,False,True,,,,1,1,0,0,0,1,0,0,0,0,False,False,7072,5492,5655,5.4
+t5-executor,user_task_5,wrong_fact,executor,1,send_money.amount,5,4.5,True,True,,,,1,1,0,0,0,1,0,0,0,0,False,False,13406,5637,6360,4.1
+t5-executor,user_task_5,wrong_fact,executor,2,send_money.amount,5,4.5,True,True,,,,2,1,0,0,0,2,1,0,0,0,False,False,7846,4522,6360,11.8
+t5-executor,user_task_5,wrong_fact,executor,3,send_money.amount,5,4.5,True,True,,,,2,1,0,0,0,2,0,0,0,0,False,False,14467,8656,6360,7.3
+t5-planner,user_task_5,wrong_fact,planner,1,R2.spotify_march_payment_amount,50.0,45.0,True,True,,,,0,0,0,0,0,1,0,0,0,0,True,False,7043,5702,6360,9.4
+t5-planner,user_task_5,wrong_fact,planner,2,R2.spotify_march_payment_amount,50.0,45.0,True,True,,,,0,0,0,0,0,1,0,0,0,0,True,False,5721,13462,6360,12.3
+t5-planner,user_task_5,wrong_fact,planner,3,R2.spotify_march_payment_amount,50.0,45.0,True,True,,,,0,0,0,0,0,1,0,0,0,0,True,False,5646,5584,6360,3.8
+t5-researcher,user_task_5,wrong_fact,researcher,1,R2.spotify_march_amount,50.0,45.0,True,True,,,,1,1,0,0,0,1,0,0,0,0,False,False,5770,8614,6360,8.9
+t5-researcher,user_task_5,wrong_fact,researcher,2,R2.spotify_march_payment_amount,50.0,45.0,True,True,,,,1,1,0,0,0,1,0,0,0,0,False,False,8256,6001,6360,5.8
+t5-researcher,user_task_5,wrong_fact,researcher,3,R2.spotify_march_payment_amount,50.0,45.0,True,True,,,,1,1,0,0,0,1,0,0,0,0,False,False,5689,5718,6360,5.0
+t6-executor,user_task_6,wrong_fact,executor,1,schedule_transaction.amount,50,45,True,True,,,,0,0,1,0,0,0,0,2,0,0,False,False,7960,5449,5484,6.0
+t6-executor,user_task_6,wrong_fact,executor,2,schedule_transaction.amount,50,45,True,True,,,,0,0,1,0,0,0,0,1,0,0,False,False,7438,8400,5484,20.0
+t6-executor,user_task_6,wrong_fact,executor,3,schedule_transaction.amount,50,45,True,True,,,,0,0,1,1,0,0,0,0,0,0,False,True,5876,7865,5484,15.8
+t6-planner,user_task_6,wrong_fact,planner,1,R2.spotify_amount,50.0,45.0,True,True,,,,0,0,1,1,0,0,0,1,0,0,False,False,7982,5475,5484,4.5
+t6-planner,user_task_6,wrong_fact,planner,2,R2.spotify_payment_amount,50.0,45.0,True,True,,,,0,0,1,1,0,0,0,0,0,0,False,True,5936,8315,5484,13.2
+t6-planner,user_task_6,wrong_fact,planner,3,R2.spotify_amount,50.0,45.0,True,True,,,,0,0,1,1,0,0,0,0,0,0,False,True,5341,7672,5484,10.3
+t6-researcher,user_task_6,wrong_fact,researcher,1,R2.spotify_amount,50.0,45.0,True,True,,,,0,0,1,1,0,0,0,1,0,0,False,False,7493,5357,5484,9.8
+t6-researcher,user_task_6,wrong_fact,researcher,2,R2.spotify_amount,50.0,45.0,True,True,,,,0,0,1,1,0,0,0,1,0,0,False,False,7650,5595,5484,10.0
+t6-researcher,user_task_6,wrong_fact,researcher,3,R2.spotify_amount,50.0,45.0,True,True,,,,0,0,1,1,0,0,0,1,0,0,False,False,7368,7458,5484,13.1

@@ -1,0 +1,33 @@
+{
+  "model": "api-glm-5.3-flash",
+  "layout": "planner-first",
+  "seed": 0,
+  "repeats": 3,
+  "specs": "faults/wrong_fact.json",
+  "fault_ids": [
+    "t0-researcher",
+    "t0-planner",
+    "t0-executor",
+    "t3-researcher",
+    "t3-planner",
+    "t3-executor",
+    "t4-researcher",
+    "t4-planner",
+    "t4-executor",
+    "t5-researcher",
+    "t5-planner",
+    "t5-executor",
+    "t6-researcher",
+    "t6-planner",
+    "t6-executor",
+    "t11-researcher",
+    "t11-planner",
+    "t11-executor",
+    "t13-researcher",
+    "t13-planner",
+    "t13-executor",
+    "t15-researcher",
+    "t15-planner",
+    "t15-executor"
+  ]
+}

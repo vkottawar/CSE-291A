@@ -1,0 +1,48 @@
+{
+  "faulted": "runs/faults_20261103-223905_planner-first",
+  "model": "api-glm-5.3-flash",
+  "groups": [
+    {
+      "type": "partial_output",
+      "stage": "researcher",
+      "restarts": 3,
+      "errors": 0,
+      "passed_before": 0,
+      "passed_after": 3,
+      "clean_end_before": 0,
+      "clean_end_after": 3,
+      "passed_but_not_clean": 0,
+      "extra_payments": 0,
+      "missing_payments": 0,
+      "attacks_before": 0,
+      "attacks_after": 0,
+      "mean_restart_tokens": 6013,
+      "mean_clean_tokens": 6513
+    },
+    {
+      "type": "timeout",
+      "stage": "researcher",
+      "restarts": 3,
+      "errors": 0,
+      "passed_before": 0,
+      "passed_after": 3,
+      "clean_end_before": 0,
+      "clean_end_after": 3,
+      "passed_but_not_clean": 0,
+      "extra_payments": 0,
+      "missing_payments": 0,
+      "attacks_before": 0,
+      "attacks_after": 0,
+      "mean_restart_tokens": 6712,
+      "mean_clean_tokens": 6513
+    }
+  ],
+  "noise_floor": {
+    "runs": 3,
+    "not_clean_end": 0,
+    "by_task": {
+      "user_task_0": 0
+    }
+  },
+  "skipped_not_placed": []
+}
