@@ -38,6 +38,7 @@ class Trace:
     layout: str = ""
     steps: list[StepRecord] = field(default_factory=list)
     warnings: list[dict] = field(default_factory=list)
+    faults: list[dict] = field(default_factory=list)  # injected faults: what was changed, where, original vs injected
     utility: bool | None = None
     error: str | None = None  # set when the run crashed (API error, bad tool args, ...); kept, not dropped
     seconds: float = 0.0
@@ -56,6 +57,8 @@ class Trace:
             print(f"{s.step_id:4} {s.role:19} {s.status:10} reads={s.reads}")
             print(f"{'':4} tools: {calls}")
             print(f"{'':4} output: {_short(s.output, 150)}")
+        for f in self.faults:
+            print(f"FAULT {f}")
         for w in self.warnings:
             print(f"WARNING {w}")
         if self.error:
