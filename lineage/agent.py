@@ -23,8 +23,8 @@ def tool_schemas(runtime, names):
     ]
 
 
-def run_agent(step_id, role_name, inputs, reads, env, runtime, llm, trace: Trace, max_turns=10, arg_hook=None):
-    """arg_hook(step_id, tool, args, call_no) -> args lets fault injection change a call before it runs."""
+def run_agent(step_id, role_name, inputs, reads, env, runtime, llm, trace: Trace, max_turns=10, arg_hook=None, before_chat=None):
+    """arg_hook mutates tool arguments; before_chat(step_id, turn) runs before a model request."""
     role = ROLES[role_name]
     record = StepRecord(step_id=step_id, role=role_name, reads=reads)
     trace.steps.append(record)
@@ -34,11 +34,19 @@ def run_agent(step_id, role_name, inputs, reads, env, runtime, llm, trace: Trace
         {"role": "system", "content": role.system},
         {"role": "user", "content": json.dumps(inputs, default=str)},
     ]
+    record.inputs = json.loads(messages[1]["content"])
     tools = tool_schemas(runtime, role.tools)
 
     for _ in range(max_turns):
-        record.turns += 1
-        reply = llm.chat(step_id, messages, tools)
+        try:
+            if before_chat:
+                before_chat(step_id, record.turns + 1)
+            record.turns += 1
+            reply = llm.chat(step_id, messages, tools)
+        except Exception as e:
+            record.status = "timeout" if isinstance(e, TimeoutError) else "error"
+            record.seconds = time.time() - start
+            raise
         record.prompt_tokens += reply.prompt_tokens
         record.completion_tokens += reply.completion_tokens
 

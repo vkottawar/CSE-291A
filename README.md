@@ -66,13 +66,58 @@ Tests (no API key needed; a fake model replays the committed clean runs):
 .venv/bin/python -m unittest tests.test_faults -v
 ```
 
-## Measure what a fault did
+
+
+## Researcher timeout and incomplete output
+
+`faults/researcher_failures.json` adds two opt-in task-0 specs on the same fault
+interface (default clean behavior and existing wrong-fact specs are unchanged):
 
 ```bash
-.venv/bin/python -m lineage.effects --faulted runs/faults_<time>_planner-first
-.venv/bin/python -m unittest tests.test_effects -v   # no API key needed
+python -m lineage --fault faults/researcher_failures.json --fault-id t0-r1-timeout
+python -m lineage --fault faults/researcher_failures.json --fault-id t0-r1-partial
+python -m unittest discover -s tests -v
 ```
 
-This compares each faulted run with the clean repeats in `results/clean-baseline` and writes `effects.csv` (one row per fault per run) and `effects_summary.json` to the faulted folder. The columns are explained at the top of `lineage/effects.py`.
+* `timeout`: synthetic `InjectedResearcherTimeout` before R1's first provider
+  request. It does not sleep or emulate a real HTTP timeout/retry; R1 has zero
+  model calls and the runner aborts through its existing error path. P0 may have
+  already made a real request. The event is logged before raising, with
+  `synthetic=true` and `provider_request_sent=false`. If P0 skips R1, placement
+  is false; that is not evidence of detecting a fault.
+* `partial_output`: after R1 returns valid parsed JSON, remove one exact-name
+  recipient fact (candidate names in the spec). Other facts remain unchanged.
+  Original/injected outputs and the removed fact are logged. No substring match
+  is used for this type. A missing target is `applied=false`. This is semantic
+  incompleteness, not malformed/truncated JSON or streamed partial output.
+  Before calling the planner, a residual-value check scans all collected facts
+  and the original request. If the removed value still appears, the run stops
+  with `handoff_validated=false` and `residual_value_present=true`: deletion was
+  applied, but the missing-information condition is invalid, not a detected or
+  recovered fault. Successful checks record `handoff_validated=true`. This checks
+  literal supplied values; it cannot rule out model inference or memorization.
 
-Read `changed` against the noise floor it prints: the same check run on clean runs, where every hit is a false alarm. `flipped` only counts runs in the `held` or `flipped` outcome, so crashes, faults that were not placed and tasks 5 and 6 stay out of it; use `actions_changed` for tasks 5 and 6.
+Researcher output changes affect the shared facts subsequently consumed by planner,
+selected executors and reporter; this is not an isolated single-consumer edge.
+Each step records its actual initial serialized payload; the runner records
+transaction additions/modifications/removals, even after an exception. Official
+utility alone does not establish absence of unwanted transactions. A stopped
+workflow does not establish successful fault detection or recovery.
+
+Offline tests replay cached model outputs: they verify placement and state, not
+model adaptation. In particular, a partial-output replay can still pass utility
+because the cached executor repeats the original correct tool call.
+
+A bounded three-case live check can read an existing authorized environment file
+without copying keys to this checkout:
+
+```bash
+python -m lineage.researcher_smoke --env-file ../CSE-291A/.env --output runs/NEW_DIRECTORY
+```
+
+It performs clean/timeout/partial cases only, writes traces and final simulated
+worlds, and queries filtered account usage. It refuses to overwrite an output
+directory. Usage reporting may lag; its observed $0.02 stop guard is not a hard
+provider billing limit. The helper uses the school-specific `/key/info` endpoint.
+If a post-run usage query fails, it preserves the completed trace/manifest and
+stops before attempting any additional case.

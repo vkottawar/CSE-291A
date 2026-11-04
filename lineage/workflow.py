@@ -30,7 +30,8 @@ def run_workflow(prompt, env, runtime, llm, trace: Trace, layout: str = "planner
 
     facts = {}
     for sid, role, inputs, reads in research:
-        out = run_agent(sid, role, inputs, reads, **ctx)
+        out = run_agent(sid, role, inputs, reads, **ctx,
+                        before_chat=fault.before_model_call if fault else None)
         if fault:
             fault.on_researcher(sid, out)
         for f in (out or {}).get("facts", []):
@@ -43,6 +44,8 @@ def run_workflow(prompt, env, runtime, llm, trace: Trace, layout: str = "planner
                 key = f"{key}_{n}"
             facts[key] = f["value"]
 
+    if fault:
+        fault.validate_handoff(facts, prompt)
     plan = run_agent("P", "planner", {"request": prompt, "facts": facts}, sorted(facts), **ctx) or {}
 
     results = {}
