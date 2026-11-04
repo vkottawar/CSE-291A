@@ -12,7 +12,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from lineage.effects import contains, effect, false_alarms, load_clean, load_trace, main, numbers
+from lineage.effects import contains, effect, fault_value, false_alarms, load_clean, load_trace, main, numbers
 from lineage.trace import ToolCallRecord
 from tests.test_faults import CLEAN, run, spec
 
@@ -50,6 +50,21 @@ class TestValueMatching(unittest.TestCase):
 
     def test_missing_value_matches_nothing(self):
         self.assertFalse(contains("anything", None))
+
+
+class TestFaultValue(unittest.TestCase):
+    def test_full_address_comes_down_to_the_changed_word(self):
+        event = {"type": "wrong_fact", "original": "Dalton Street 123, New York, NY 10001, USA",
+                 "injected": "Dalton Street 124, New York, NY 10001, USA"}
+        self.assertEqual(fault_value(event), "124")
+        self.assertTrue(contains('update_user_info({"street": "Dalton Street 124"})', fault_value(event)))
+
+    def test_numbers_stay_as_they_are(self):
+        self.assertEqual(fault_value({"type": "wrong_fact", "original": 98.7, "injected": 88.83}), 88.83)
+
+    def test_timeouts_and_removed_facts_leave_no_value(self):
+        self.assertIsNone(fault_value({"type": "timeout", "original": "x", "injected": "timeout exception"}))
+        self.assertIsNone(fault_value({"type": "partial_output", "original": {"facts": []}, "injected": {"facts": []}}))
 
 
 class TestRead(unittest.TestCase):
@@ -166,6 +181,43 @@ class TestOutcome(unittest.TestCase):
         trace = faulted(0, "t0-researcher")
         trace.task_id, trace.utility = "user_task_12", False  # 0/3 clean
         self.assertEqual(row_for(trace)["outcome"], "clean_unreliable")
+
+
+class TestResearcherFailures(unittest.TestCase):
+    def partial(self, **extra):
+        trace = faulted(0, "t0-researcher")
+        trace.faults[0] = {"id": "t0-r1-partial", "type": "partial_output", "stage": "researcher", "applied": True,
+                           "target": "R1.bill_iban", "original": {"facts": []}, "injected": {"facts": []},
+                           "removed": {"name": "bill_iban", "value": "UK12345678901234567890"},
+                           "handoff_validated": True, **extra}
+        return trace
+
+    def test_injected_timeout_is_stopped_not_crashed_or_flipped(self):
+        trace = faulted(0, "t0-researcher")
+        trace.faults[0] = {"id": "t0-r1-timeout", "type": "timeout", "stage": "researcher", "applied": True,
+                           "step": "R1", "target": "R1.model_call", "original": "x", "injected": "timeout exception"}
+        trace.error, trace.utility = "InjectedResearcherTimeout: t0-r1-timeout", False
+        row = row_for(trace)
+        self.assertEqual(row["outcome"], "stopped")
+        self.assertEqual(row["ignored"], "")
+
+    def test_removed_fact_is_never_called_ignored(self):
+        self.assertEqual(row_for(self.partial())["ignored"], "")
+
+    def test_removed_value_still_paid_to_is_corrected(self):
+        self.assertIs(row_for(self.partial())["corrected"], True)  # the replay still pays that IBAN
+
+    def test_gap_that_blocks_the_payment_is_a_change(self):
+        trace = self.partial()
+        executor_step(trace).tool_calls.clear()
+        row = row_for(trace)
+        self.assertIs(row["corrected"], False)
+        self.assertIs(row["changed"], True)
+
+    def test_value_left_in_the_inputs_makes_the_fault_invalid(self):
+        trace = self.partial(handoff_validated=False)
+        trace.error = "ValueError: removed value remains in planner inputs"
+        self.assertEqual(row_for(trace)["outcome"], "invalid_fault")
 
 
 class TestNoiseFloor(unittest.TestCase):
