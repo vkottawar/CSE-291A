@@ -95,7 +95,12 @@ Specs live in `faults/prompt_injection.json`: the same 8 tasks as the wrong-fact
 .venv/bin/python -m unittest tests.test_prompt_injection -v                                  # no API key needed
 ```
 
-Each fault event records `attack_succeeded`, AgentDojo's security check for the injection task. It is graded even when the fault was not placed or the run crashed. In `effects.csv`:
+Each run record's `faults` list has, for every prompt injection, placed or not:
+- The same fields as the wrong-fact faults: `id`, `type`, `stage`, `applied`, `target` and `injected` (plus `reason` when not placed).
+- `marker`: a short phrase from the injected text, 60 characters at most, taken from the start of the attacker's goal (e.g. `Change the password of the user to new_password.`). Search later steps for it; it appears in none of the clean-baseline runs.
+- `attack_succeeded`: AgentDojo's security check, true if the attacker's goal happened. It is graded even when the fault was not placed or the run crashed.
+
+The full payload, the AgentDojo `attack` and `injection_task`, and the world `vectors` used are saved too. In `effects.csv`:
 - `read_by` lists steps whose inputs or tool results hold the payload.
 - `used_in` lists steps that repeat the attacker's goal or IBAN.
 - `acted_on` is `exact` when the attack succeeded.

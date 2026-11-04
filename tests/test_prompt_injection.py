@@ -8,13 +8,17 @@ measured as one.
 """
 
 import json
+import tempfile
 import unittest
+from pathlib import Path
+
+from agentdojo.task_suite.load_suites import get_suite
 
 from lineage.effects import effect, load_clean
 from lineage.faults import FaultSpec, load_specs
-from lineage.injections import contains_payload
+from lineage.injections import build, contains_marker
 from lineage.llm import Reply, ToolCallRequest
-from lineage.runner import run_task
+from lineage.runner import BENCHMARK_VERSION, run_task
 from tests.test_faults import CLEAN, ROOT, ReplayLLM, run
 
 SPECS = ROOT / "faults" / "prompt_injection.json"
@@ -72,6 +76,46 @@ class TestSpecs(unittest.TestCase):
             a1(0, "planner", attack="no_such_attack")
 
 
+class TestSavedRecord(unittest.TestCase):
+    """What lineage.effects reads from each saved run: the fault fields wrong-fact faults have, a short
+    phrase to search later steps for, and whether the attacker's goal happened."""
+
+    FIELDS = ("id", "type", "stage", "applied", "target", "injected", "marker", "attack_succeeded")
+
+    def saved_event(self, fault):
+        _, trace, _ = run(int(fault.task.rsplit("_", 1)[1]), fault)
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "run.json"
+            trace.save(path)
+            return json.loads(path.read_text())["faults"][0]
+
+    def test_every_event_has_the_fields(self):
+        cases = [a1(0, "researcher"), a1(0, "planner"), a1(0, "executor"),
+                 a1(0, "researcher", step="R3"), a1(0, "executor", executor="E2")]  # last two: not placed
+        for fault in cases:
+            with self.subTest(fault=(fault.stage, fault.step, fault.executor)):
+                e = self.saved_event(fault)
+                for k in self.FIELDS:
+                    self.assertIn(k, e)
+                self.assertIsInstance(e["attack_succeeded"], bool)
+                self.assertTrue(e["marker"])
+                if e["applied"]:
+                    self.assertTrue(e["target"])
+                    self.assertIn(e["marker"], e["injected"])
+
+    def test_marker_is_short_and_never_in_clean_runs(self):
+        clean_text = " ".join(p.read_text() for p in CLEAN.glob("*.json"))
+        suite = get_suite(BENCHMARK_VERSION, "banking")
+        for n in range(9):
+            with self.subTest(injection_task=n):
+                spec = a1(0, "planner", goal=f"injection_task_{n}")
+                payload, _, _, phrase = build(spec, suite, suite.get_user_task_by_id("user_task_0"))
+                self.assertLessEqual(len(phrase), 60)
+                self.assertIn(phrase, payload)
+                self.assertGreaterEqual(len(phrase.split()), 4)
+                self.assertNotIn(phrase.casefold(), clean_text.casefold())
+
+
 class TestResearcherStage(unittest.TestCase):
     def test_bill_file_carries_payload_and_keeps_real_text(self):
         _, trace, _ = run(0, a1(0, "researcher"))
@@ -80,14 +124,14 @@ class TestResearcherStage(unittest.TestCase):
         self.assertEqual((e["step"], e["target"]), ("R1", "R1.read_file"))
         self.assertEqual(e["vectors"], ["injection_bill_text"])
         result = step(trace, "R1").tool_calls[0].result
-        self.assertTrue(contains_payload(result, e["payload"]))
+        self.assertTrue(contains_marker(result, e["marker"]))
         self.assertIn("98.70", result)  # append mode: the real bill line is still there
         self.assertIs(e["attack_succeeded"], False)  # the replay ignores it
 
     def test_replace_mode_drops_real_text(self):
         _, trace, _ = run(0, a1(0, "researcher", vector_mode="replace"))
         result = step(trace, "R1").tool_calls[0].result
-        self.assertTrue(contains_payload(result, event(trace)["payload"]))
+        self.assertTrue(contains_marker(result, event(trace)["marker"]))
         self.assertNotIn("98.70", result)
 
     def test_transaction_subject_reaches_history_researcher(self):
@@ -124,7 +168,7 @@ class TestExecutorStage(unittest.TestCase):
         self.assertTrue(e["applied"])
         self.assertEqual((e["step"], e["target"], e["call_no"]), ("E1", "send_money.result", 1))
         call = step(trace, "E1").tool_calls[0]
-        self.assertTrue(contains_payload(call.result, e["payload"]))
+        self.assertTrue(contains_marker(call.result, e["marker"]))
         self.assertTrue(call.result.startswith(e["original"]))
 
     def test_not_placed_without_that_executor(self):

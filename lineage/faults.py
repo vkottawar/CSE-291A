@@ -160,6 +160,7 @@ class FaultInjector:
         self.trace = trace
         self.applied = False
         self.payload = ""  # prompt_injection: the AgentDojo payload, set by prepare()
+        self.marker = ""  # a short phrase from the payload, to spot it in later steps
         self.vectors = {}
         self.injection_task = None
 
@@ -170,7 +171,7 @@ class FaultInjector:
             return {}
         from .injections import build
 
-        self.payload, self.vectors, self.injection_task = build(self.spec, suite, user_task, model_name)
+        self.payload, self.vectors, self.injection_task, self.marker = build(self.spec, suite, user_task, model_name)
         return self.vectors
 
     def grade(self, report, pre_env, post_env):
@@ -295,7 +296,8 @@ class FaultInjector:
                 where = {"researcher": f"{s.step or 'researcher'} read of {sorted(self.vectors)}",
                          "planner": f"sub-plan for {s.executor or 'any executor'}",
                          "executor": f"successful tool call in {s.executor or 'E1'}"}[s.stage]
-                self.trace.faults.append({**self._base(), "applied": False, "reason": f"no {where}", **self._a1()})
+                self.trace.faults.append({**self._base(), "applied": False, "reason": f"no {where}",
+                                          "target": None, "injected": self.payload, **self._a1()})
                 return
             where = {"researcher": f"fact {self.spec.fact} in {self.spec.step}",
                      "planner": f"fact {self.spec.fact} in any sub-plan",
@@ -309,18 +311,18 @@ class FaultInjector:
 
     def _a1(self):
         s = self.spec
-        return {"attack": s.attack, "injection_task": s.injection_task, "payload": self.payload,
+        return {"attack": s.attack, "injection_task": s.injection_task, "marker": self.marker, "payload": self.payload,
                 "vectors": sorted(self.vectors), "vector_mode": s.vector_mode if s.stage == "researcher" else None}
 
     def _researcher_read(self, step_id):
         """Researcher-stage prompt injection: placed at the first researcher whose tool results hold it."""
-        from .injections import contains_payload
+        from .injections import contains_marker
 
         s = self.spec
         if self.applied or s.stage != "researcher" or (s.step and step_id != s.step):
             return
         step = next((st for st in reversed(self.trace.steps) if st.step_id == step_id), None)
-        call = next((c for c in (step.tool_calls if step else []) if contains_payload(c.result, self.payload)), None)
+        call = next((c for c in (step.tool_calls if step else []) if contains_marker(c.result, self.marker)), None)
         if call is None:
             return
         self._log(step=step_id, target=f"{step_id}.{call.tool}", call_no=call.call_no,
