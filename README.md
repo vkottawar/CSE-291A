@@ -68,6 +68,17 @@ Tests (no API key needed; a fake model replays the committed clean runs):
 
 
 
+## Measure what a fault did
+
+```bash
+.venv/bin/python -m lineage.effects --faulted runs/faults_<time>_planner-first
+.venv/bin/python -m unittest tests.test_effects -v   # no API key needed
+```
+
+This compares each faulted run with the clean repeats in `results/clean-baseline` and writes `effects.csv` (one row per fault per run) and `effects_summary.json` to the faulted folder. The columns are explained at the top of `lineage/effects.py`.
+
+Read `changed` against the noise floor it prints: the same check run on clean runs, where every hit is a false alarm. `flipped` only counts runs in the `held` or `flipped` outcome, so crashes, injected timeouts, faults that were not placed and tasks 5 and 6 stay out of it; use `actions_changed` for tasks 5 and 6. A `held` run can still be a bad one: check `corrected`, because a retried payment means the wrong amount was paid as well.
+
 ## Researcher timeout and incomplete output
 
 `faults/researcher_failures.json` adds two opt-in task-0 specs on the same fault
