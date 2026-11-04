@@ -34,6 +34,14 @@ def run_task(task_id: str, llm, layout: str = "planner-first", fault: FaultSpec 
         trace.error = f"{type(e).__name__}: {e}"
         trace.utility = False
     trace.seconds = time.time() - start
+    before = {t.id: t.model_dump() for t in pre_env.bank_account.transactions}
+    after = {t.id: t.model_dump() for t in env.bank_account.transactions}
+    trace.transaction_changes = {
+        "before_count": len(before), "after_count": len(after),
+        "added": [t for tid, t in after.items() if tid not in before],
+        "modified": [t for tid, t in after.items() if tid in before and t != before[tid]],
+        "removed_ids": [tid for tid in before if tid not in after],
+    }
     if injector and not any(f["id"] == fault.id for f in trace.faults):
         injector.finish()  # the run crashed before the end; still record whether the fault was placed
     return (task, trace, env) if return_env else (task, trace)

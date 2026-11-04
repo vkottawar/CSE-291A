@@ -24,8 +24,9 @@ class StepRecord:
     role: str
     reads: list[str]  # field-level references, e.g. "user.request", "R1.bill_amount", "P.subplans[0]"
     output: object = None
+    inputs: object = None  # exact serialized initial payload, not a mutable alias
     tool_calls: list[ToolCallRecord] = field(default_factory=list)
-    status: str = "ok"  # ok | bad_output | max_turns
+    status: str = "ok"  # ok | bad_output | max_turns | timeout | error
     turns: int = 0
     prompt_tokens: int = 0
     completion_tokens: int = 0
@@ -39,6 +40,7 @@ class Trace:
     steps: list[StepRecord] = field(default_factory=list)
     warnings: list[dict] = field(default_factory=list)
     faults: list[dict] = field(default_factory=list)  # injected faults: what was changed, where, original vs injected
+    transaction_changes: dict = field(default_factory=dict)
     utility: bool | None = None
     error: str | None = None  # set when the run crashed (API error, bad tool args, ...); kept, not dropped
     seconds: float = 0.0

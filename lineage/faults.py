@@ -1,5 +1,12 @@
 """Wrong-fact fault injection at three stages: researcher, planner, executor.
 
+Researcher-only extensions: type="timeout" raises InjectedResearcherTimeout before
+the selected researcher's first model request (synthetic, not a network outage).
+type="partial_output" removes one exact-name fact after valid JSON output and
+before collection; original/injected outputs are recorded, JSON remains valid.
+These extensions accept only stage="researcher", step=R1/R2/R3. Partial output
+requires fact candidates; they do not use the wrong_fact change options below.
+
 A fault spec is a small JSON object. The same spec is reused by every recovery method, so all of
 them face the identical fault. Example:
 
@@ -38,6 +45,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 STAGES = ("researcher", "planner", "executor")
+TYPES = ("wrong_fact", "timeout", "partial_output")
+
+
+class InjectedResearcherTimeout(TimeoutError):
+    """Synthetic pre-request failure, not evidence of a real provider timeout."""
 
 
 @dataclass
@@ -56,14 +68,26 @@ class FaultSpec:
     note: str = ""
 
     def __post_init__(self):
-        if self.type != "wrong_fact":
-            raise ValueError(f"{self.id}: only wrong_fact is implemented here, got {self.type}")
+        if self.type not in TYPES:
+            raise ValueError(f"{self.id}: type must be one of {TYPES}")
         if self.stage not in STAGES:
             raise ValueError(f"{self.id}: stage must be one of {STAGES}")
         if isinstance(self.fact, str):
             self.fact = [self.fact]
         if isinstance(self.tool, str):
             self.tool = [self.tool]
+        if self.type in ("timeout", "partial_output"):
+            if self.stage != "researcher" or self.step not in ("R1", "R2", "R3"):
+                raise ValueError(f"{self.id}: {self.type} requires researcher stage and R1/R2/R3")
+            if self.type == "partial_output" and not self.fact:
+                raise ValueError(f"{self.id}: partial_output requires exact fact-name candidates")
+            if self.type == "partial_output" and any(not isinstance(name, str) or not name.strip() for name in self.fact):
+                raise ValueError(f"{self.id}: partial_output fact names must be nonempty strings")
+            if self.type == "timeout" and self.fact:
+                raise ValueError(f"{self.id}: timeout targets a model request, not a fact")
+            if self.change or self.tool or self.arg or self.executor or self.call_no is not None:
+                raise ValueError(f"{self.id}: {self.type} does not accept wrong-fact change/call options")
+            return
         if self.stage == "researcher" and not (self.step and self.fact):
             raise ValueError(f"{self.id}: researcher faults need 'step' and 'fact'")
         if self.stage == "planner" and not self.fact:
@@ -99,6 +123,16 @@ class FaultInjector:
 
     # -- hooks ---------------------------------------------------------------------------------
 
+    def before_model_call(self, step_id, turn):
+        """Timeout the target researcher's first attempt, before any provider request."""
+        s = self.spec
+        if self.applied or s.type != "timeout" or step_id != s.step or turn != 1:
+            return
+        self._log(step=step_id, target=f"{step_id}.model_call", turn=turn,
+                  point="before_model_call", synthetic=True, provider_request_sent=False,
+                  original="model request would be attempted", injected="timeout exception")
+        raise InjectedResearcherTimeout(f"{s.id}: synthetic timeout before {step_id} model request")
+
     def on_researcher(self, step_id, output):
         """Called right after a researcher finishes, before its facts are collected."""
         s = self.spec
@@ -106,6 +140,19 @@ class FaultInjector:
             return
         facts = (output or {}).get("facts", []) if isinstance(output, dict) else []
         names = [f.get("name", "") for f in facts]
+        if s.type == "timeout":
+            return
+        if s.type == "partial_output":
+            # Exact names only: never accidentally remove another field by substring.
+            i = next((names.index(name) for name in s.fact if name in names), None)
+            if i is None:
+                return
+            original = copy.deepcopy(output)
+            removed = facts.pop(i)
+            self._log(step=step_id, target=f"{step_id}.{removed['name']}",
+                      point="researcher_output_before_collection", operation="drop_fact",
+                      original=original, injected=copy.deepcopy(output), removed=copy.deepcopy(removed))
+            return
         i = _match(names, s.fact)
         if i is None:
             return  # reported as not placed at the end of the run
@@ -133,6 +180,17 @@ class FaultInjector:
         self._log(step="P", executor=eid, target=key, original=old, injected=new)
         return subplan, given
 
+    def validate_handoff(self, facts, request=None):
+        """Check the business payload, including facts and the original user request."""
+        if not self.applied or self.spec.type != "partial_output":
+            return
+        event = next(e for e in self.trace.faults if e["id"] == self.spec.id and e["applied"])
+        old = event["removed"]["value"]
+        residual = _contains_value({"request": request, "facts": facts}, old)
+        event.update(handoff_validated=not residual, residual_value_present=residual)
+        if residual:
+            raise ValueError(f"{self.spec.id}: removed value remains in planner inputs; planner not called")
+
     def on_tool_call(self, step_id, tool, args, call_no):
         """Called before a tool call runs. Returns the (possibly changed) arguments."""
         s = self.spec
@@ -148,6 +206,10 @@ class FaultInjector:
     def finish(self):
         """Called once at the end of the run. Records a fault that never found its target."""
         if not self.applied:
+            if self.spec.type == "timeout":
+                self.trace.faults.append({**self._base(), "applied": False,
+                    "reason": f"no first model-call attempt in {self.spec.step}"})
+                return
             where = {"researcher": f"fact {self.spec.fact} in {self.spec.step}",
                      "planner": f"fact {self.spec.fact} in any sub-plan",
                      "executor": f"{self.spec.arg} in a {self.spec.tool} call"}[self.spec.stage]
@@ -173,6 +235,16 @@ def _match(names, candidates):
             if c in n:
                 return i
     return None
+
+
+def _contains_value(data, value):
+    if isinstance(data, dict):
+        return any(_contains_value(k, value) or _contains_value(v, value) for k, v in data.items())
+    if isinstance(data, (list, tuple)):
+        return any(_contains_value(v, value) for v in data)
+    if isinstance(value, str):
+        return bool(value) and isinstance(data, str) and value in data
+    return type(data) is type(value) and data == value
 
 
 def mutate(value, change=None):
