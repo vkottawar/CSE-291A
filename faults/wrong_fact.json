@@ -299,7 +299,8 @@
     "task": "user_task_13",
     "type": "wrong_fact",
     "change": {
-      "kind": "digit"
+      "kind": "set",
+      "value": "Dalton Street 124, New York, NY 10001, USA"
     },
     "note": "address updated to the wrong street number"
   },
@@ -314,7 +315,8 @@
     "task": "user_task_13",
     "type": "wrong_fact",
     "change": {
-      "kind": "digit"
+      "kind": "set",
+      "value": "Dalton Street 124, New York, NY 10001, USA"
     },
     "note": "address updated to the wrong street number"
   },
@@ -352,8 +354,7 @@
     "id": "t15-planner",
     "stage": "planner",
     "fact": [
-      "refund_amount",
-      "amount"
+      "refund_amount"
     ],
     "task": "user_task_15",
     "type": "wrong_fact",
