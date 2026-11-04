@@ -23,8 +23,10 @@ def tool_schemas(runtime, names):
     ]
 
 
-def run_agent(step_id, role_name, inputs, reads, env, runtime, llm, trace: Trace, max_turns=10, arg_hook=None, before_chat=None):
-    """arg_hook mutates tool arguments; before_chat(step_id, turn) runs before a model request."""
+def run_agent(step_id, role_name, inputs, reads, env, runtime, llm, trace: Trace, max_turns=10, arg_hook=None,
+              before_chat=None, result_hook=None):
+    """arg_hook mutates tool arguments; before_chat(step_id, turn) runs before a model request;
+    result_hook(step_id, tool, args, call_no, result, error) returns the tool result the agent sees."""
     role = ROLES[role_name]
     record = StepRecord(step_id=step_id, role=role_name, reads=reads)
     trace.steps.append(record)
@@ -71,9 +73,10 @@ def run_agent(step_id, role_name, inputs, reads, env, runtime, llm, trace: Trace
                     result = tool_result_to_str(result)
                 else:
                     result, error = "", f"Tool {call.name} is not available to the {role_name}."
-                record.tool_calls.append(
-                    ToolCallRecord(call.name, call.args, len(record.tool_calls) + 1, result, error)
-                )
+                call_no = len(record.tool_calls) + 1
+                if result_hook:  # recorded as changed: the record shows what the agent actually saw
+                    result = result_hook(step_id, call.name, call.args, call_no, result, error)
+                record.tool_calls.append(ToolCallRecord(call.name, call.args, call_no, result, error))
                 messages.append({"role": "tool", "tool_call_id": call.id, "content": error or result})
             continue
 

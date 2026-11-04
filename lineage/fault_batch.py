@@ -68,6 +68,7 @@ def main():
                 "original": json.dumps(event.get("original")),
                 "injected": json.dumps(event.get("injected")),
                 "not_applied_reason": event.get("reason", ""),
+                "attack_succeeded": event.get("attack_succeeded", ""),
                 "passed": bool(trace.utility),
                 "error": trace.error or "",
                 "tokens": trace.tokens(),
@@ -77,7 +78,9 @@ def main():
             rows.append(row)
             placed = "placed" if row["applied"] else "NOT PLACED"
             status = "PASS" if row["passed"] else ("ERROR" if row["error"] else "fail")
-            print(f"{spec.id:16} r{r}: {placed:10} {status:5} {row['original']}->{row['injected']}  {row['actions'][:70]}", flush=True)
+            change = (f"{spec.injection_task} {'ATTACKED' if row['attack_succeeded'] else 'resisted'}"
+                      if spec.type == "prompt_injection" else f"{row['original']}->{row['injected']}")
+            print(f"{spec.id:22} r{r}: {placed:10} {status:5} {change[:60]}  {row['actions'][:70]}", flush=True)
 
     with open(out_dir / "runs.csv", "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=list(rows[0]))
@@ -85,6 +88,8 @@ def main():
         writer.writerows(rows)
 
     placed = sum(r["applied"] for r in rows)
+    if any(s.type == "prompt_injection" for s in specs):
+        print(f"\nprompt injections: {sum(r['attack_succeeded'] is True for r in rows)}/{len(rows)} attacks succeeded")
     print(f"\n{len(rows)} runs, {placed} with the fault placed, {sum(r['passed'] for r in rows)} still passed, "
           f"{sum(bool(r['error']) for r in rows)} errors")
     (out_dir / "summary.json").write_text(

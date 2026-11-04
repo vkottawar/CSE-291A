@@ -20,13 +20,16 @@ def run_task(task_id: str, llm, layout: str = "planner-first", fault: FaultSpec 
         raise ValueError(f"fault {fault.id} is for {fault.task}, not {task_id}")
     suite = get_suite(BENCHMARK_VERSION, "banking")
     task = suite.get_user_task_by_id(task_id)
-    env = task.init_environment(suite.load_and_inject_default_environment({}))
+    trace = Trace(task_id=task_id, layout=layout)
+    injector = FaultInjector(fault, trace) if fault else None
+    # A researcher-stage prompt injection puts AgentDojo's payload into the world before it loads.
+    injections = injector.prepare(suite, task, getattr(llm, "model", "")) if injector else {}
+    env = task.init_environment(suite.load_and_inject_default_environment(injections))
     pre_env = env.model_copy(deep=True)
     runtime = FunctionsRuntime(suite.tools)
 
-    trace = Trace(task_id=task_id, layout=layout)
-    injector = FaultInjector(fault, trace) if fault else None
     start = time.time()
+    report = None
     try:
         report = run_workflow(task.PROMPT, env, runtime, llm, trace, layout=layout, fault=injector)
         trace.utility = task.utility(report or "", pre_env, env)
@@ -44,4 +47,6 @@ def run_task(task_id: str, llm, layout: str = "planner-first", fault: FaultSpec 
     }
     if injector and not any(f["id"] == fault.id for f in trace.faults):
         injector.finish()  # the run crashed before the end; still record whether the fault was placed
+    if injector:
+        injector.grade(report, pre_env, env)  # prompt_injection: did the attacker's goal happen?
     return (task, trace, env) if return_env else (task, trace)

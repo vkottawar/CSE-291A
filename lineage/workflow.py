@@ -65,7 +65,8 @@ def run_workflow(prompt, env, runtime, llm, trace: Trace, layout: str = "planner
             subplan, given = fault.on_subplan(eid, subplan, given)
         hook = fault.on_tool_call if fault else None
         results[eid] = run_agent(
-            eid, "executor", {"subplan": subplan, "facts": given}, [f"P.subplans[{i}]", *given], **ctx, arg_hook=hook
+            eid, "executor", {"subplan": subplan, "facts": given}, [f"P.subplans[{i}]", *given], **ctx, arg_hook=hook,
+            result_hook=fault.on_tool_result if fault else None,
         )
         # An executor's own report can't be trusted: flag claimed actions with no successful tool call.
         done = (results[eid] or {}).get("done") or []
