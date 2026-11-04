@@ -10,15 +10,19 @@ every fact whatever they do with it.
   read_by   later steps that were given the faulted field
   used_in   later steps whose output or tool arguments contain the injected value
   acted_on  "exact": a successful tool call contains the injected value
-            "derived": a successful tool call not seen in any clean repeat, without the injected
-            value. Inferred: e.g. task 3 turns a wrong 9.00 into a payment of 3.00.
+            "derived": a successful tool call with an amount, id or recipient no clean repeat used,
+            without the injected value. Inferred: e.g. task 3 turns a wrong 9.00 into a payment of 3.00.
   ignored   placed, but nothing above fired and nothing changed
+  corrected executor faults only: a later successful call put the original value back. For a payment
+            that is a second payment, not a repair, and AgentDojo can still pass the run.
 
 Beyond normal variation? Compared with every clean repeat of the task, never one run with one run.
-  actions_changed  the normalized action set (batch.actions) matches no clean repeat
+  actions_changed  the normalized action set (batch.actions) matches no clean repeat. Strict: an extra
+                   first_name or a differently written city counts.
   changed_in       later steps holding an amount, IBAN or call found nowhere in the task's clean repeats
-  changed          either of the above, leaving out the injected call itself. An executor fault always
-                   changes its own call, so this says whether anything else moved.
+  changed          changed_in, or the amounts, ids and recipients of the run's calls match no clean
+                   repeat, leaving out the injected call itself. An executor fault always changes its
+                   own call, so this says whether anything else moved.
 
 Outcome: held or flipped, only where the comparison means something. Otherwise:
   not_placed        the fault never found its target, so the run says nothing about it
@@ -76,6 +80,23 @@ def step_calls(step, ok_only=False) -> list[str]:
     return actions(SimpleNamespace(steps=[SimpleNamespace(role=step.role, tool_calls=calls)]))
 
 
+def key_calls(step, ok_only=False) -> list[str]:
+    """Calls cut down to amounts, ids and recipient. Models vary the rest from run to run, such as
+    adding first_name or writing the city as "New York, NY 10001", without any fault involved."""
+    out = []
+    for c in step.tool_calls:
+        if step.role == "executor" and (c.error is None or not ok_only):
+            args = {k: as_number(v) for k, v in c.args.items() if k not in ("subject", "date") and as_number(v) is not None}
+            if "recipient" in c.args:
+                args["recipient"] = c.args["recipient"]
+            out.append(f"{c.tool}({json.dumps(args, sort_keys=True)})")
+    return out
+
+
+def key_actions(trace) -> tuple:
+    return tuple(sorted(k for s in trace.steps for k in key_calls(s)))
+
+
 def step_text(step) -> str:
     """What the step produced, leaving out tool results: those echo the arguments, not the agent's thinking."""
     return json.dumps(step.output, ensure_ascii=False, default=str) + " " + " ".join(step_calls(step))
@@ -107,7 +128,7 @@ def contains(text, value) -> bool:
 def tokens(step) -> set:
     """The parts of a step that should repeat across clean runs. Free wording is left out."""
     text = step_text(step)
-    return numbers(text) | set(IBAN.findall(text)) | set(step_calls(step))
+    return numbers(text) | set(IBAN.findall(text)) | set(key_calls(step))
 
 
 def normal_tokens(traces) -> set:
@@ -194,8 +215,20 @@ def acted_on(trace, event, clean_traces, seen_clean) -> str:
     calls = [c for s in later_steps(trace, event) for c in step_calls(s, ok_only=True)]
     if any(contains(c, event.get("injected")) for c in calls) and not seen_clean:
         return "exact"
-    normal = {a for t in clean_traces for a in actions(t)}
-    return "derived" if set(calls) - normal else "no"
+    keys = {k for s in later_steps(trace, event) for k in key_calls(s, ok_only=True)}
+    normal = {k for t in clean_traces for s in t.steps for k in key_calls(s)}
+    return "derived" if keys - normal else "no"
+
+
+def corrected(trace, event) -> bool | str:
+    """Did the executor put the original value back with a later call? Blank for other stages."""
+    call = injected_call(trace, event)
+    if call is None:
+        return ""
+    arg = event["target"].split(".", 1)[1]
+    step = next(s for s in trace.steps if s.step_id == event["step"])
+    return any(c.tool == call.tool and c.call_no > call.call_no and c.error is None
+               and contains(json.dumps(c.args.get(arg)), event["original"]) for c in step.tool_calls)
 
 
 def outcome(trace, event, clean_traces) -> str:
@@ -225,6 +258,7 @@ def effect(trace, event, clean_traces) -> dict:
         "used_in": "",
         "acted_on": "",
         "ignored": "",
+        "corrected": "",
         "actions_changed": "",
         "changed_in": "",
         "changed": "",
@@ -245,7 +279,7 @@ def effect(trace, event, clean_traces) -> dict:
             if contains(step_text(s), value) and not any(contains(step_text(c), value) for c in clean.get(s.step_id, []))]
     seen_clean = any(contains(step_text(c), value) for s in later for c in clean.get(s.step_id, []))
     changed_in = sorted(set(changed_steps(later, clean_traces)) | set(used), key=[s.step_id for s in later].index)
-    changed = bool(changed_in) or tuple(actions(rest)) not in action_sets(clean_traces)
+    changed = bool(changed_in) or key_actions(rest) not in {key_actions(t) for t in clean_traces}
     acted = acted_on(trace, event, clean_traces, seen_clean)
 
     row.update({
@@ -253,6 +287,7 @@ def effect(trace, event, clean_traces) -> dict:
         "used_in": " ".join(used),
         "acted_on": acted,
         "ignored": not used and not changed and acted == "no",
+        "corrected": corrected(trace, event),
         "actions_changed": tuple(actions(trace)) not in action_sets(clean_traces),
         "changed_in": " ".join(changed_in),
         "changed": changed,
@@ -270,7 +305,7 @@ def false_alarms(clean) -> dict:
             later = [s for s in t.steps if s.role in ("planner", "executor", "reporter")]
             alarms.append({
                 "task": task,
-                "actions": tuple(actions(t)) not in action_sets(others),
+                "actions": key_actions(t) not in {key_actions(o) for o in others},
                 "steps": changed_steps(later, others),
             })
     return {
@@ -299,6 +334,7 @@ def summarize(rows) -> list[dict]:
             "used": sum(bool(r["used_in"]) for r in placed),
             "acted_exact": sum(r["acted_on"] == "exact" for r in placed),
             "acted_derived": sum(r["acted_on"] == "derived" for r in placed),
+            "corrected": sum(r["corrected"] is True for r in placed),
             "changed": sum(r["changed"] is True for r in placed),
             "actions_changed": sum(r["actions_changed"] is True for r in placed),
             "flipped": sum(r["outcome"] == "flipped" for r in comparable),
@@ -341,10 +377,10 @@ def main(argv=None):
 
     summary = summarize(rows)
     noise = false_alarms({r["task"]: clean[r["task"]] for r in rows})
-    print(f"{'type':12} {'stage':10} {'placed':>9} {'ignored':>7} {'used':>5} {'exact':>5} {'derived':>7} {'changed':>7} {'flipped':>9} {'crashed':>7}")
+    print(f"{'type':12} {'stage':10} {'placed':>9} {'ignored':>7} {'used':>5} {'exact':>5} {'derived':>7} {'fixed':>5} {'changed':>7} {'flipped':>9} {'crashed':>7}")
     for s in summary:
         print(f"{s['type']:12} {s['stage']:10} {s['placed']:>4}/{s['runs']:<4} {s['ignored']:>7} {s['used']:>5} {s['acted_exact']:>5} "
-              f"{s['acted_derived']:>7} {s['changed']:>7} {s['flipped']:>4}/{s['comparable']:<4} {s['crashed']:>7}")
+              f"{s['acted_derived']:>7} {s['corrected']:>5} {s['changed']:>7} {s['flipped']:>4}/{s['comparable']:<4} {s['crashed']:>7}")
     print(f"\nnoise floor on clean runs: actions changed in {noise['actions_changed']}/{noise['runs']}, "
           f"some step changed in {noise['any_step_changed']}/{noise['runs']} {noise['by_step']}")
     if no_fault:

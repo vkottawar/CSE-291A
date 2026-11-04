@@ -13,6 +13,7 @@ import unittest
 from pathlib import Path
 
 from lineage.effects import contains, effect, false_alarms, load_clean, load_trace, main, numbers
+from lineage.trace import ToolCallRecord
 from tests.test_faults import CLEAN, run, spec
 
 clean = load_clean(CLEAN)
@@ -85,6 +86,25 @@ class TestRead(unittest.TestCase):
         self.assertNotIn("E1", row["used_in"].split())
         self.assertEqual(row["acted_on"], "derived")
         self.assertIs(row["ignored"], False)
+
+    def test_extra_name_on_a_call_is_not_derived(self):
+        # A real t13 run added first_name to the call. Nothing to do with the fault.
+        trace = faulted(13, "t13-researcher")
+        executor_step(trace).tool_calls[0].args["first_name"] = "Emma"
+        row = row_for(trace)
+        self.assertEqual(row["acted_on"], "no")
+        self.assertIs(row["actions_changed"], True)  # the strict comparison still sees it
+        self.assertIs(row["changed"], False)
+
+    def test_retry_with_the_original_value_is_corrected(self):
+        trace = faulted(0, "t0-executor")
+        step = executor_step(trace)
+        step.tool_calls.append(ToolCallRecord("send_money", {"amount": 98.7, "recipient": "x"}, 2, "sent", None))
+        self.assertIs(row_for(trace)["corrected"], True)
+
+    def test_no_retry_is_not_corrected(self):
+        self.assertIs(row_for(faulted(0, "t0-executor"))["corrected"], False)
+        self.assertEqual(row_for(faulted(0, "t0-researcher"))["corrected"], "")
 
     def test_planner_fault_reaches_the_reporter_only_through_its_executor(self):
         trace = faulted(0, "t0-planner")
