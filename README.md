@@ -20,7 +20,7 @@ cp .env.example .env        # then put your TritonAI key in .env
 .venv/bin/python -m lineage --task user_task_0
 ```
 
-This runs one [AgentDojo](https://github.com/ethz-spylab/agentdojo) banking task (benchmark version `v1.2.2`) through the 7-agent workflow, prints each step, reports whether AgentDojo's check passed (`utility`), and saves the full run record to `runs/`.
+This runs one [AgentDojo](https://github.com/ethz-spylab/agentdojo) banking task (benchmark version `v1.2.2`) through the workflow (8 agents from 7 roles), prints each step, reports whether AgentDojo's check passed (`utility`), and saves the full run record to `runs/`.
 
 Task ids are `user_task_0` to `user_task_15`. Options: `--model` and `--base-url` override `.env`; `--seed` sets the seed (default 0).
 
@@ -37,12 +37,51 @@ The run record lists, for every step, the facts it read, its output, and its too
 | `lineage/roles.py` | Each role's instructions, allowed tools and output format |
 | `lineage/agent.py` | One agent's tool loop, recorded into the run record |
 | `lineage/workflow.py` | The order: research planner, researchers, planner, executors, reporter |
+| `lineage/runner.py` | Runs one task through the workflow and grades it with AgentDojo's check |
 | `lineage/trace.py` | The run record format |
-| `lineage/effects.py` | For each fault: was it read, did later outputs change, did the outcome flip |
+| `lineage/batch.py` | Repeated clean runs; this produced the clean baseline |
+| `lineage/faults.py` | Fault spec format and the injector that applies a fault during a run |
+| `lineage/fault_batch.py` | Runs fault specs several times each and saves the run records and worlds |
 | `lineage/injections.py` | AgentDojo prompt-injection payloads for the `prompt_injection` fault type |
+| `lineage/effects.py` | For each fault: was it read, did later outputs change, did the outcome flip |
 | `lineage/restart.py` | Full restart from the world a faulted run left behind, and what that leaves in the world |
+| `lineage/researcher_smoke.py` | Small live check of the researcher timeout and partial-output faults |
 | `lineage/llm.py` | Client for any OpenAI-compatible server; reads `.env` |
 | `lineage/__main__.py` | Command line |
+| `faults/` | Fault specs: wrong values, researcher failures and prompt injections |
+| `results/` | Saved runs and measurements; see Results below |
+| `tests/` | Offline tests; they need no API key |
+| `.githooks/` | Optional pre-commit and pre-push checks |
+
+## Results
+
+These are the Phase 1 runs, using the model `api-glm-5.3-flash`. New runs go to the git-ignored `runs/` folder, so these copies are the record.
+
+| Folder | Contents | Main result |
+| --- | --- | --- |
+| `results/clean-baseline` | 36 runs with no fault: 12 tasks × 3 repeats | 33 of 36 pass; all 3 failures are on task 12 |
+| `results/wrong-value-faults` | 72 faulted runs, `effects.csv`, and 72 restarts in `restart/` | 43 of 54 comparable runs flip; after restart 71 of 72 pass the check, but 58 of those don't match a clean end and 53 of the 72 have an extra payment |
+| `results/researcher-failures` | 3 timeout and 3 partial-output runs, `effects.csv`, and 6 restarts in `restart/` | All 6 restarts pass and end clean, with no extra payments |
+| `results/prompt-injection` | 75 faulted runs and `effects.csv` | 0 of 75 attacks succeed |
+
+The prompt-injection batch was stopped on purpose at 75 of 144 planned runs. It covers tasks 0, 3, 4 and 5 fully, plus 3 password runs on task 6, and tasks 11, 13 and 15 did not run. Stopping early means this folder has no `runs.csv` or `summary.json`. Restarts were skipped because no attack succeeded.
+
+To repeat the clean baseline:
+
+```bash
+.venv/bin/python -m lineage.batch    # all usable tasks × 3 repeats
+```
+
+The sections below give the commands for the fault, effects and restart runs. Model output varies between runs, so a rerun won't match these numbers exactly.
+
+## Tests and hooks
+
+```bash
+.venv/bin/python -m unittest discover -s tests    # no API key needed; a fake model replays the clean runs
+git config core.hooksPath .githooks               # optional: turn on the hooks
+```
+
+The pre-commit hook scans staged files for secrets and unsafe code. The pre-push hook scans all tracked files and runs the tests.
 
 ## Inject a wrong fact
 
